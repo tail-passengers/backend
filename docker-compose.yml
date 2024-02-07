@@ -3,8 +3,6 @@ version: '3'
 services:
   db:
     image: postgres
-    volumes:
-      - ./back/data/db:/var/lib/postgresql/data
     env_file:
       - .env_sample
   web:
@@ -17,7 +15,7 @@ services:
       - ./back/:/app
     ports:
       - "8000:8000"
-    command: python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:8000
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     env_file:
       - .env_sample
     depends_on:
