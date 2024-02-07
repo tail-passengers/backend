@@ -23,8 +23,6 @@ COPY requirements.txt /app
 
 RUN pip install -r requirements.txt --no-cache-dir
 
-COPY ./back /app
-
 EXPOSE 8000
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
