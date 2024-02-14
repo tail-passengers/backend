@@ -14,5 +14,12 @@ fclean:
 	docker-compose -f ./docker-compose.yml down -v
 	docker system prune --all --force --volumes
 
+linux:
+	docker compose -f ./docker-compose.yml up --build --detach
+
+linux-fclean:
+	docker compose -f ./docker-compose.yml down -v
+	docker system prune --all --force --volumes
+
 
 .PHONY: all down re clean
