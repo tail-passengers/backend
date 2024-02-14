@@ -88,6 +88,18 @@ DATABASES = {
     }
 }
 
+# postgresql for local development
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": "project",
+#         "USER": "postgres",
+#         "PASSWORD": "password",
+#         "HOST": "localhost",
+#         "PORT": "",
+#     }
+# }
+
 # sqlite3 for local development
 # DATABASES = {
 #     "default": {
