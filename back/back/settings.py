@@ -38,8 +38,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "users",
     "item",
-    "user",
     "rest_framework"
 ]
 
@@ -87,6 +87,14 @@ DATABASES = {
         'PORT': 5432,
     }
 }
+
+# sqlite3 for local development
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     }
+# }
 
 
 # Password validation
