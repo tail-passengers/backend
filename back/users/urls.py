@@ -9,4 +9,6 @@ from django.conf.urls.static import static
 router = routers.DefaultRouter()
 router.register("Users", views.UsersViewSet)
 
-urlpatterns = [path('', include(router.urls))] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns = [
+    path("", include(router.urls)),
+]
