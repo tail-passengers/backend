@@ -20,6 +20,9 @@ fclean:
 linux:
 	docker compose -f ./docker-compose.yml up --build --detach
 
+linux-debug:
+	docker compose -f ./docker-compose.yml up --build
+
 linux-fclean:
 	docker compose -f ./docker-compose.yml down -v
 	docker system prune --all --force --volumes

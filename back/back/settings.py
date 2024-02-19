@@ -38,22 +38,55 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "users",
+    # Third-party apps
+    "corsheaders",
     "rest_framework",
     'django.contrib.sites',
     'rest_framework.authtoken',
     'allauth',
+    # Project apps
+    "users",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  # CORS 에러 처리를 위한 미들웨어 추가
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# 허용할 메소드
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
+# 허용할 헤더
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
+
+# CORS 전체 허용
+CORS_ORIGIN_ALLOW_ALL = True
+
+# 쿠키가 cross-site HTTP 요청에 포함될 수 있도록 허용
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = "back.urls"
 
