@@ -1,17 +1,24 @@
-from rest_framework import viewsets
-from rest_framework.views import APIView
-from django.shortcuts import redirect
-from .serializers import UsersSerializer
-from .models import Users
-from dotenv import load_dotenv
 import os
 import requests
 import uuid
+from rest_framework import viewsets
+from rest_framework.views import APIView
+from django.shortcuts import redirect
+from dotenv import load_dotenv
+from .serializers import UsersSerializer
+from .models import Users
+from .serializers import UsersSerializer, FriendRequestSerializer
+from .models import Users, FriendRequests
 
 
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = Users.objects.all()
     serializer_class = UsersSerializer
+
+
+class FriendRequestViewSet(viewsets.ModelViewSet):
+    queryset = FriendRequests.objects.all()
+    serializer_class = FriendRequestSerializer
 
 
 class Login42APIView(APIView):

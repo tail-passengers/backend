@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'allauth',
     # Project apps
     "users",
+    "games",
 ]
 
 MIDDLEWARE = [
