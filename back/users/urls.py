@@ -12,4 +12,6 @@ router.register("friend_requests", views.FriendRequestViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("42/", views.Login42APIView.as_view()),
+    path("user/42/callback", views.CallbackAPIView.as_view()),
 ]
