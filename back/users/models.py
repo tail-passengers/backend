@@ -1,5 +1,7 @@
+import os
 import uuid
 from django.db import models
+from django.conf import settings
 
 
 class UserStatusEnum(models.TextChoices):
@@ -26,6 +28,17 @@ class Users(models.Model):
     class Meta:
         db_table = "Users"
         ordering = ["created_time"]
+
+    def delete(self, using=None, keep_parents=False) -> None:
+        """
+        delete 메서드 오버라이딩
+        Args:
+            using: 삭제할 때 사용할 DB, 기본값은 None으로 기본 DB를 사용
+            keep_parents: 삭제 작업을 수행할 때, 자식 객체를 유지할 지 여부, 기본값은 False로 자식 객체를 삭제
+        """
+        if self.profile_image:
+            os.remove(os.path.join(settings.MEDIA_ROOT, self.profile_image.name))
+        super(Users, self).delete(using, keep_parents)
 
 
 class RequestStatusEnum(models.TextChoices):
