@@ -1,10 +1,12 @@
 import os
 import requests
 import uuid
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import redirect
 from django.core.files.base import ContentFile
+from django.conf import settings
 from dotenv import load_dotenv
 from .serializers import UsersSerializer, FriendRequestSerializer
 from .models import Users, FriendRequests
@@ -13,6 +15,19 @@ from .models import Users, FriendRequests
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = Users.objects.all()
     serializer_class = UsersSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.profile_image:
+            os.remove(os.path.join(settings.MEDIA_ROOT, instance.profile_image.name))
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.profile_image:
+            os.remove(os.path.join(settings.MEDIA_ROOT, instance.profile_image.name))
+        return super().update(request, *args, **kwargs)
 
 
 class FriendRequestViewSet(viewsets.ModelViewSet):
