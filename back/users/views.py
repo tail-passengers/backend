@@ -12,6 +12,7 @@ from .serializers import UsersSerializer, FriendRequestSerializer
 from .models import Users, FriendRequests
 
 
+# https://squirmm.tistory.com/entry/Django-DRF-Method-Override-%EB%B0%A9%EB%B2%95
 class UsersViewSet(viewsets.ModelViewSet):
     queryset = Users.objects.all()
     serializer_class = UsersSerializer
