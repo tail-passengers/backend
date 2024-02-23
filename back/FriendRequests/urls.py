@@ -1,6 +1,6 @@
 from django.urls import include, path
 from rest_framework import routers
-from back.FriendRequests.migrations import views
+from . import views
 
 # DefaultRouter
 router = routers.DefaultRouter()

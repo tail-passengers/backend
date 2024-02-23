@@ -1,4 +1,6 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets
+from .models import FriendRequests
+from .serializers import FriendRequestSerializer
 
 
 class FriendRequestViewSet(viewsets.ModelViewSet):

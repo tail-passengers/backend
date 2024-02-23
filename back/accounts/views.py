@@ -60,8 +60,8 @@ class CallbackAPIView(APIView):
             return redirect("/")
 
         if (
-            request.session.get("state")
-            and not request.GET.get("state") == request.session["state"]
+                request.session.get("state")
+                and not request.GET.get("state") == request.session["state"]
         ):
             raise ValidationError({"detail": "oauth중 state 검증 실패."})
 

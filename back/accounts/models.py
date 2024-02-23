@@ -58,3 +58,6 @@ class Users(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.intra_id
+
+    def set_password(self, raw_password):
+        self.set_unusable_password()
