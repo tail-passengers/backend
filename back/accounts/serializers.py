@@ -5,4 +5,27 @@ from .models import Users
 class UsersSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
-        fields = "__all__"
+        fields = (
+            "user_id",
+            "nickname",
+            "profile_image",
+            "win_count",
+            "lose_count",
+            "status",
+        )
+
+
+class UsersDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = (
+            "user_id",
+            "nickname",
+            "profile_image",
+            "win_count",
+            "lose_count",
+            "status",
+            "intra_id",
+            "created_time",
+            "updated_time",
+        )
