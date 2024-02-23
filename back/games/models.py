@@ -17,7 +17,9 @@ class JoinGeneralGame(models.Model):
     class Meta:
         db_table = "JoinGeneralGame"
         constraints = [
-            models.UniqueConstraint(fields=['game_id', 'user_id'], name='join_general_game_id')
+            models.UniqueConstraint(
+                fields=["game_id", "user_id"], name="join_general_game_id"
+            )
         ]
 
 
@@ -58,7 +60,9 @@ class JoinTournamentGame(models.Model):
     class Meta:
         db_table = "JoinTournamentGame"
         constraints = [
-            models.UniqueConstraint(fields=['game_id', 'user_id'], name='join_tournament_game_id')
+            models.UniqueConstraint(
+                fields=["game_id", "user_id"], name="join_tournament_game_id"
+            )
         ]
 
 
@@ -85,5 +89,7 @@ class TournamentGameLogs(models.Model):
         db_table = "TournamentGameLogs"
         ordering = ["start_time"]
         constraints = [
-            models.UniqueConstraint(fields=['tournament_name', 'round'], name='tournament_game_id')
+            models.UniqueConstraint(
+                fields=["tournament_name", "round"], name="tournament_game_id"
+            )
         ]
