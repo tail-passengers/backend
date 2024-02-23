@@ -56,6 +56,10 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
         DELETE method override
         """
         instance = self.get_object()
+        if instance.user_id != kwargs["pk"]:
+            raise ValidationError(
+                {"detail": "다른 사용자의 정보는 삭제할 수 없습니다."}
+            )
         if instance.profile_image:
             try:
                 os.remove(
@@ -70,6 +74,10 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
         """
         PATCH method override
         """
+        if request.user.user_id != kwargs["pk"]:
+            raise ValidationError(
+                {"detail": "다른 사용자의 정보는 수정할 수 없습니다."}
+            )
         for field in self.can_not_change_fields:
             if request.data.get(field) is not None:
                 raise ValidationError(
