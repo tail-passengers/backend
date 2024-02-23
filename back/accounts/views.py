@@ -21,7 +21,7 @@ class UsersViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Users.objects.all()
     serializer_class = UsersSerializer
-    http_method_names = ["get"]
+    http_method_names = ["get", "post"]  # TODO debug를 위해 post 임시 추가
 
 
 class UsersDetailViewSet(viewsets.ModelViewSet):
@@ -29,9 +29,6 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
     queryset = Users.objects.all()
     serializer_class = UsersDetailSerializer
     http_method_names = ["get", "patch", "delete"]  # TODO delete 나중에 제거 예정
-
-    # def get_queryset(self):
-    #     return Users.objects.filter(user_id=self.request.user.user_id)
 
     # 우선 nickname과 profile_image를 제외한 모든 필드를 수정 불가로 설정
     can_not_change_fields = (
