@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     # Project apps
     "accounts",
     "games",
-    "FriendRequests",
+    "friendrequests",
 ]
 
 MIDDLEWARE = [
