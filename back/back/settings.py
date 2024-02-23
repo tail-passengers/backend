@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     # Third-party apps
     "corsheaders",
     "rest_framework",
-    "django.contrib.sites",
     "rest_framework.authtoken",
     "allauth",
     # Project apps
