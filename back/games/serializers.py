@@ -5,7 +5,7 @@ from .models import (
     JoinGeneralGame,
     JoinTournamentGame,
 )
-from users.serializers import UsersSerializer
+from accounts.serializers import UsersSerializer
 
 
 class GeneralGameLogsSerializer(serializers.ModelSerializer):

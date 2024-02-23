@@ -9,7 +9,7 @@ class JoinGeneralGame(models.Model):
         db_column="game_id",
     )
     user_id = models.ForeignKey(
-        "users.Users",
+        "accounts.Users",
         on_delete=models.CASCADE,
         db_column="user_id",
     )
@@ -17,7 +17,9 @@ class JoinGeneralGame(models.Model):
     class Meta:
         db_table = "JoinGeneralGame"
         constraints = [
-            models.UniqueConstraint(fields=['game_id', 'user_id'], name='join_general_game_id')
+            models.UniqueConstraint(
+                fields=["game_id", "user_id"], name="join_general_game_id"
+            )
         ]
 
 
@@ -26,13 +28,13 @@ class GeneralGameLogs(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     winner = models.ForeignKey(
-        "users.Users",
+        "accounts.Users",
         on_delete=models.CASCADE,
         db_column="winner",
         related_name="general_winner",
     )
     loser = models.ForeignKey(
-        "users.Users",
+        "accounts.Users",
         on_delete=models.CASCADE,
         db_column="loser",
         related_name="general_loser",
@@ -50,7 +52,7 @@ class JoinTournamentGame(models.Model):
         db_column="game_id",
     )
     user_id = models.ForeignKey(
-        "users.Users",
+        "accounts.Users",
         on_delete=models.CASCADE,
         db_column="user_id",
     )
@@ -58,7 +60,9 @@ class JoinTournamentGame(models.Model):
     class Meta:
         db_table = "JoinTournamentGame"
         constraints = [
-            models.UniqueConstraint(fields=['game_id', 'user_id'], name='join_tournament_game_id')
+            models.UniqueConstraint(
+                fields=["game_id", "user_id"], name="join_tournament_game_id"
+            )
         ]
 
 
@@ -66,13 +70,13 @@ class TournamentGameLogs(models.Model):
     tournament_name = models.CharField(max_length=20)
     round = models.IntegerField()
     winner = models.ForeignKey(
-        "users.Users",
+        "accounts.Users",
         on_delete=models.CASCADE,
         db_column="winner",
         related_name="tournament_winner",
     )
     loser = models.ForeignKey(
-        "users.Users",
+        "accounts.Users",
         on_delete=models.CASCADE,
         db_column="loser",
         related_name="tournament_loser",
@@ -85,5 +89,7 @@ class TournamentGameLogs(models.Model):
         db_table = "TournamentGameLogs"
         ordering = ["start_time"]
         constraints = [
-            models.UniqueConstraint(fields=['tournament_name', 'round'], name='tournament_game_id')
+            models.UniqueConstraint(
+                fields=["tournament_name", "round"], name="tournament_game_id"
+            )
         ]

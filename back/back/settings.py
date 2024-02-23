@@ -32,7 +32,6 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -41,12 +40,12 @@ INSTALLED_APPS = [
     # Third-party apps
     "corsheaders",
     "rest_framework",
-    "django.contrib.sites",
     "rest_framework.authtoken",
     "allauth",
     # Project apps
-    "users",
+    "accounts",
     "games",
+    "friendrequests",
 ]
 
 MIDDLEWARE = [
@@ -181,3 +180,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
+
+AUTH_USER_MODEL = "accounts.Users"
