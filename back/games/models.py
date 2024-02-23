@@ -9,7 +9,7 @@ class JoinGeneralGame(models.Model):
         db_column="game_id",
     )
     user_id = models.ForeignKey(
-        "users.Users",
+        "accounts.Users",
         on_delete=models.CASCADE,
         db_column="user_id",
     )
@@ -28,13 +28,13 @@ class GeneralGameLogs(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     winner = models.ForeignKey(
-        "users.Users",
+        "accounts.Users",
         on_delete=models.CASCADE,
         db_column="winner",
         related_name="general_winner",
     )
     loser = models.ForeignKey(
-        "users.Users",
+        "accounts.Users",
         on_delete=models.CASCADE,
         db_column="loser",
         related_name="general_loser",
@@ -52,7 +52,7 @@ class JoinTournamentGame(models.Model):
         db_column="game_id",
     )
     user_id = models.ForeignKey(
-        "users.Users",
+        "accounts.Users",
         on_delete=models.CASCADE,
         db_column="user_id",
     )
@@ -70,13 +70,13 @@ class TournamentGameLogs(models.Model):
     tournament_name = models.CharField(max_length=20)
     round = models.IntegerField()
     winner = models.ForeignKey(
-        "users.Users",
+        "accounts.Users",
         on_delete=models.CASCADE,
         db_column="winner",
         related_name="tournament_winner",
     )
     loser = models.ForeignKey(
-        "users.Users",
+        "accounts.Users",
         on_delete=models.CASCADE,
         db_column="loser",
         related_name="tournament_loser",
