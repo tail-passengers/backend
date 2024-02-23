@@ -44,7 +44,7 @@ class Login42APIView(APIView):
         load_dotenv()
         client_id = os.environ.get("CLIENT_ID")
         response_type = "code"
-        redirect_uri = "http://127.0.0.1:8000/login/42/callback"
+        redirect_uri = os.environ.get("REDIRECT_URI")
         state = str(uuid.uuid4())
         request.session["state"] = state
         oauth_42_api_url = "https://api.intra.42.fr/oauth/authorize"
@@ -80,13 +80,6 @@ class CallbackAPIView(APIView):
             status=0,
         )
 
-        # image 저장을 위해 post 말고 모델을 생성해서 저장
-        # win, lose는 기본값이 0이므로 따로 저장하지 않음
-        # user_instance = Users(
-        #     intra_id=login_id,
-        #     nickname=login_id,
-        #     status=0,
-        # )
         if created:
             response = requests.get(image_address)
             if response.status_code == 200:
@@ -104,7 +97,7 @@ class CallbackAPIView(APIView):
         client_secret = os.environ.get("CLIENT_SECRET")
         code = request.GET.get("code")
         state = request.GET.get("state")
-        redirect_uri = "http://127.0.0.1:8000/login/42/callback"
+        redirect_uri = os.environ.get("REDIRECT_URI")
         data = {
             "grant_type": grant_type,
             "client_id": client_id,
