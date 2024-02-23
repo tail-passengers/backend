@@ -8,7 +8,7 @@ from django.shortcuts import redirect
 from django.core.files.base import ContentFile
 from django.conf import settings
 from dotenv import load_dotenv
-from .serializers import UsersSerializer
+from .serializers import UsersSerializer, UsersDetailSerializer
 from .models import Users
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import login
@@ -21,19 +21,66 @@ class UsersViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Users.objects.all()
     serializer_class = UsersSerializer
+    http_method_names = ["get"]
+
+
+class UsersDetailViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = Users.objects.all()
+    serializer_class = UsersDetailSerializer
+    http_method_names = ["get", "patch", "delete"]  # TODO delete 나중에 제거 예정
+
+    # def get_queryset(self):
+    #     return Users.objects.filter(user_id=self.request.user.user_id)
+
+    # 우선 nickname과 profile_image를 제외한 모든 필드를 수정 불가로 설정
+    can_not_change_fields = (
+        "user_id",
+        "password",
+        "last_login",
+        "is_superuser",
+        "intra_id",
+        "win_count",
+        "lose_count",
+        "created_time",
+        "updated_time",
+        "status",
+        "is_staff",
+        "is_active",
+        "groups",
+        "user_permissions",
+    )
 
     def destroy(self, request, *args, **kwargs):
+        """
+        DELETE method override
+        """
         instance = self.get_object()
         if instance.profile_image:
-            os.remove(os.path.join(settings.MEDIA_ROOT, instance.profile_image.name))
+            try:
+                os.remove(
+                    os.path.join(settings.MEDIA_ROOT, instance.profile_image.name)
+                )
+            except FileNotFoundError:
+                print("File not found")
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def update(self, request, *args, **kwargs):
+    def partial_update(self, request, *args, **kwargs):
+        """
+        PATCH method override
+        """
+        for field in self.can_not_change_fields:
+            if request.data.get(field) is not None:
+                raise ValidationError(
+                    {"detail": f"{field}는 수정할 수 없는 필드입니다."}
+                )
         instance = self.get_object()
-        if instance.profile_image:
-            os.remove(os.path.join(settings.MEDIA_ROOT, instance.profile_image.name))
-        return super().update(request, *args, **kwargs)
+        previous_image = instance.profile_image
+        response = super().partial_update(request, *args, **kwargs)
+        if previous_image and request.data.get("profile_image") is not None:
+            os.remove(os.path.join(settings.MEDIA_ROOT, previous_image.name))
+        return response
 
 
 class Login42APIView(APIView):
@@ -60,8 +107,8 @@ class CallbackAPIView(APIView):
             return redirect("/")
 
         if (
-                request.session.get("state")
-                and not request.GET.get("state") == request.session["state"]
+            request.session.get("state")
+            and not request.GET.get("state") == request.session["state"]
         ):
             raise ValidationError({"detail": "oauth중 state 검증 실패."})
 

@@ -8,8 +8,14 @@ router = routers.DefaultRouter()
 router.register("users", views.UsersViewSet)
 
 urlpatterns = [
-    path("", include(router.urls)),
+    path(
+        "users/<uuid:pk>/",
+        views.UsersDetailViewSet.as_view(
+            {"get": "list", "patch": "partial_update", "delete": "destroy"}
+        ),
+    ),
     path("login/", views.Login42APIView.as_view()),
     path("login/42/callback/", views.CallbackAPIView.as_view()),
     path("logout/", logout_view, name="logout"),
+    path("", include(router.urls)),
 ]
