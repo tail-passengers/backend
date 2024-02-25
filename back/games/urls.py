@@ -13,6 +13,11 @@ router.register("tournament_game_logs", views.TournamentGameLogsViewSet)
 
 urlpatterns = [
     path(
+        "general_game_logs/",
+        views.GeneralGameLogsViewSet.as_view({"get": "list", "post": "create"}),
+        name="general_game_logs",
+    ),
+    path(
         "general_game_logs/<uuid:fk>/",
         views.GeneralGameLogsViewSet.as_view({"get": "list"}),
     ),

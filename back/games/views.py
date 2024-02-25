@@ -4,6 +4,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from accounts.models import Users
 from .serializers import (
     GeneralGameLogsSerializer,
     TournamentGameLogsSerializer,
@@ -25,16 +26,20 @@ class GeneralGameLogsViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post"]  # TODO debug를 위해 post 임시 추가
 
     # general game logs 생성 시 join general game 생성하는 오버라이딩 에러 발생
-    # def create(self, request, *args, **kwargs):
-    #     response = super().create(request, *args, **kwargs)
-    #     JoinGeneralGame.objects.create(
-    #         game_id=self.get_object().game_id,
-    #         user_id=request.data["winner"],
-    #     )
-    #     JoinGeneralGame.objects.create(
-    #         game_id=self.get_object().game_id,
-    #         user_id=request.data["loser"],
-    #     )
+    # fk는 uuid가 아닌 인스턴스를 요구해서 생긴 에러인듯
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        game_id = response.data["game_id"]
+        game_instance = GeneralGameLogs.objects.get(game_id=game_id)
+
+        winner_uuid = request.data.get("winner")
+        loser_uuid = request.data.get("loser")
+        if winner_uuid and loser_uuid:
+            winner_user = Users.objects.get(user_id=winner_uuid)
+            loser_user = Users.objects.get(user_id=loser_uuid)
+            JoinGeneralGame.objects.create(game_id=game_instance, user_id=winner_user)
+            JoinGeneralGame.objects.create(game_id=game_instance, user_id=loser_user)
+        return response
 
     def list(self, request, *args, **kwargs):
         # 밑에 if문은 debug를 위한 임시 get
