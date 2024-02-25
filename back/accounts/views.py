@@ -12,8 +12,9 @@ from .serializers import UsersSerializer, UsersDetailSerializer
 from .models import Users
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import login
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.contrib.auth import logout
+
 
 
 # https://squirmm.tistory.com/entry/Django-DRF-Method-Override-%EB%B0%A9%EB%B2%95
@@ -22,6 +23,29 @@ class UsersViewSet(viewsets.ModelViewSet):
     queryset = Users.objects.all()
     serializer_class = UsersSerializer
     http_method_names = ["get", "post"]  # TODO debug를 위해 post 임시 추가
+
+    def create(self, request, *args, **kwargs):
+        """
+        디버그용 post
+        """
+        intra_id = request.data.get("intra_id")
+        if not intra_id:
+            return Response(
+                {"error": "intra_id is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # intra_id 중복 검사
+        if Users.objects.filter(intra_id=intra_id).exists():
+            return Response(
+                {"error": "User with this intra_id already exists"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 새로운 사용자 생성
+        user = Users.objects.create_user(intra_id=intra_id)
+        serializer = self.get_serializer(user)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class UsersDetailViewSet(viewsets.ModelViewSet):
@@ -53,8 +77,8 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
         DELETE method override
         """
         instance = self.get_object()
-        if instance.user_id != kwargs["pk"]:
-            raise ValidationError(
+        if request.user.pk != kwargs["pk"]:
+            raise PermissionDenied(
                 {"detail": "다른 사용자의 정보는 삭제할 수 없습니다."}
             )
         if instance.profile_image:
@@ -71,13 +95,13 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
         """
         PATCH method override
         """
-        if request.user.user_id != kwargs["pk"]:
-            raise ValidationError(
+        if request.user.pk != kwargs["pk"]:
+            raise PermissionDenied(
                 {"detail": "다른 사용자의 정보는 수정할 수 없습니다."}
             )
         for field in self.can_not_change_fields:
             if request.data.get(field) is not None:
-                raise ValidationError(
+                raise PermissionDenied(
                     {"detail": f"{field}는 수정할 수 없는 필드입니다."}
                 )
         instance = self.get_object()

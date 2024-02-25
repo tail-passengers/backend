@@ -7,6 +7,7 @@ class UsersSerializer(serializers.ModelSerializer):
         model = Users
         fields = (
             "user_id",
+            "intra_id",
             "nickname",
             "profile_image",
             "win_count",
