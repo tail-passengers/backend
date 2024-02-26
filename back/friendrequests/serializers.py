@@ -10,6 +10,7 @@ class FriendListSerializer(serializers.ModelSerializer):
     class Meta:
         model = FriendRequests
         fields = (
+            "request_id",
             "request_user_id",
             "response_user_id",
             "status",
@@ -25,5 +26,17 @@ class FriendRequestSerializer(serializers.ModelSerializer):
         fields = (
             "request_user_id",
             "response_user_id",
+            "friend_request",
+        )
+
+
+class FriendRequestDetailSerializer(serializers.ModelSerializer):
+    friend_request = UsersSerializer(read_only=True)
+
+    class Meta:
+        model = FriendRequests
+        fields = (
+            "request_id",
+            "status",
             "friend_request",
         )
