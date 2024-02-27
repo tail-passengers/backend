@@ -1,11 +1,6 @@
-from django.urls import include, path
-from rest_framework import routers
+from django.urls import path
 from . import views
 from .views import logout_view
-
-# DefaultRouter
-# router = routers.DefaultRouter()
-# router.register("users", views.UsersViewSet)
 
 urlpatterns = [
     path(
@@ -18,7 +13,7 @@ urlpatterns = [
         views.UsersDetailViewSet.as_view(
             {"get": "list", "patch": "partial_update", "delete": "destroy"}
         ),
-        name="usersDetail",
+        name="users_detail",
     ),
     path("login/", views.Login42APIView.as_view()),
     path("login/42/callback/", views.CallbackAPIView.as_view()),

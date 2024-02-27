@@ -1,15 +1,6 @@
-from django.urls import include, path
-from rest_framework import routers
+from django.urls import path
 from . import views
 
-
-# DefaultRouter
-router = routers.DefaultRouter()
-router.register("general_game_logs", views.GeneralGameLogsViewSet)
-router.register("tournament_game_logs", views.TournamentGameLogsViewSet)
-# API 지원 안 함
-# router.register("join_general_game", views.JoinGeneralGameViewSet)
-# router.register("join_tournament_game", views.JoinTournamentGameViewSet)
 
 urlpatterns = [
     path(
@@ -20,14 +11,21 @@ urlpatterns = [
     path(
         "general_game_logs/<uuid:fk>/",
         views.GeneralGameLogsViewSet.as_view({"get": "list"}),
+        name="general_game_logs_detail",
+    ),
+    path(
+        "tournament_game_logs/",
+        views.TournamentGameLogsViewSet.as_view({"post": "create"}),
+        name="create_tournament_game_logs",
     ),
     path(
         "tournament_game_logs/<uuid:fk>/",
         views.TournamentGameLogsViewSet.as_view({"get": "list"}),
+        name="tournament_game_user_logs",
     ),
     path(
         "tournament_game_logs/<str:name>/",
         views.TournamentGameLogsViewSet.as_view({"get": "list"}),
+        name="tournament_name_logs",
     ),
-    path("", include(router.urls)),
 ]
