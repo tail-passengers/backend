@@ -69,6 +69,20 @@ class TournamentGameLogsSerializer(serializers.ModelSerializer):
             "user_request",
         )
 
+    def validate(self, data):
+        if data["winner"] == data["loser"]:
+            raise serializers.ValidationError("Winner and loser must be different.")
+        # 시작 시간이 끝나는 시간보다 이전인지 확인
+        if data["start_time"] >= data["end_time"]:
+            raise serializers.ValidationError("End time must be later than start time.")
+        # 끝나는 시간이 현재 시각보다 이후인지 확인
+        if data["end_time"] > timezone.now():
+            raise serializers.ValidationError("End time must not be in the future.")
+        # 라운드가 양수인지 확인
+        if data["round"] <= 0:
+            raise serializers.ValidationError("The round must be a positive number.")
+        return data
+
 
 class JoinTournamentGameSerializer(serializers.ModelSerializer):
     user_request = UsersSerializer(read_only=True)

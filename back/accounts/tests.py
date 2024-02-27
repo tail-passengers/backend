@@ -43,7 +43,7 @@ class UsersViewSetTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class UsersDetailViewSetTest(APITestCase):
+class users_detailViewSetTest(APITestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(intra_id="3")
         self.other_user = get_user_model().objects.create_user(intra_id="4")
@@ -52,7 +52,7 @@ class UsersDetailViewSetTest(APITestCase):
         """
         권한 없이 delete test
         """
-        url = reverse("usersDetail", kwargs={"pk": self.other_user.pk})
+        url = reverse("users_detail", kwargs={"pk": self.other_user.pk})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -62,7 +62,7 @@ class UsersDetailViewSetTest(APITestCase):
         """
         self.client.force_authenticate(user=self.user)
         initial_user_count = get_user_model().objects.count()
-        url = reverse("usersDetail", kwargs={"pk": self.user.pk})
+        url = reverse("users_detail", kwargs={"pk": self.user.pk})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         # 삭제 후 유저 수가 1 감소했는지 확인
@@ -76,7 +76,7 @@ class UsersDetailViewSetTest(APITestCase):
         """
         self.client.force_authenticate(user=self.user)
         initial_user_count = get_user_model().objects.count()
-        url = reverse("usersDetail", kwargs={"pk": self.other_user.pk})
+        url = reverse("users_detail", kwargs={"pk": self.other_user.pk})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         # 삭제 오류 후 유저 수가 동일한지 확인
@@ -88,7 +88,7 @@ class UsersDetailViewSetTest(APITestCase):
         """
         권한 없이 patch test
         """
-        url = reverse("usersDetail", kwargs={"pk": self.other_user.pk})
+        url = reverse("users_detail", kwargs={"pk": self.other_user.pk})
         response = self.client.patch(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -97,7 +97,7 @@ class UsersDetailViewSetTest(APITestCase):
         기본적인 patch test
         """
         self.client.force_authenticate(user=self.user)
-        url = reverse("usersDetail", kwargs={"pk": self.user.pk})
+        url = reverse("users_detail", kwargs={"pk": self.user.pk})
         self.assertEqual(self.user.nickname, "3")
         data = {"nickname": "changed"}
         response = self.client.patch(url, data)
@@ -113,7 +113,7 @@ class UsersDetailViewSetTest(APITestCase):
         수정하면 안 되는 필드 테스트
         """
         self.client.force_authenticate(user=self.user)
-        url = reverse("usersDetail", kwargs={"pk": self.user.pk})
+        url = reverse("users_detail", kwargs={"pk": self.user.pk})
         data = {"user_id": "1"}
         response = self.client.patch(url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -123,7 +123,7 @@ class UsersDetailViewSetTest(APITestCase):
         동일한 닉네임으로 변경하는 경우 테스트
         """
         self.client.force_authenticate(user=self.user)
-        url = reverse("usersDetail", kwargs={"pk": self.user.pk})
+        url = reverse("users_detail", kwargs={"pk": self.user.pk})
         data = {"nickname": self.other_user.nickname}
         response = self.client.patch(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

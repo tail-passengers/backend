@@ -1,6 +1,7 @@
-from django.db import IntegrityError
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import IntegrityError, DatabaseError
 from django.db.models import Q
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
@@ -28,18 +29,40 @@ class GeneralGameLogsViewSet(viewsets.ModelViewSet):
     # general game logs 생성 시 join general game 생성하는 오버라이딩 에러 발생
     # fk는 uuid가 아닌 인스턴스를 요구해서 생긴 에러인듯
     def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
-        game_id = response.data["game_id"]
-        game_instance = GeneralGameLogs.objects.get(game_id=game_id)
+        try:
+            response = super().create(request, *args, **kwargs)
+            game_id = response.data["game_id"]
+            if not game_id:
+                return Response(
+                    {"error": "Game이 존재하지 않습니다."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            game_instance = GeneralGameLogs.objects.get(game_id=game_id)
+            winner_uuid = request.data.get("winner")
+            loser_uuid = request.data.get("loser")
+            if winner_uuid and loser_uuid:
+                try:
+                    winner_user = Users.objects.get(user_id=winner_uuid)
+                    loser_user = Users.objects.get(user_id=loser_uuid)
+                except ObjectDoesNotExist:
+                    return Response(
+                        {"error": "유저가 존재하지 않습니다."},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+                JoinGeneralGame.objects.create(
+                    game_id=game_instance, user_id=winner_user
+                )
+                JoinGeneralGame.objects.create(
+                    game_id=game_instance, user_id=loser_user
+                )
+            return response
 
-        winner_uuid = request.data.get("winner")
-        loser_uuid = request.data.get("loser")
-        if winner_uuid and loser_uuid:
-            winner_user = Users.objects.get(user_id=winner_uuid)
-            loser_user = Users.objects.get(user_id=loser_uuid)
-            JoinGeneralGame.objects.create(game_id=game_instance, user_id=winner_user)
-            JoinGeneralGame.objects.create(game_id=game_instance, user_id=loser_user)
-        return response
+        except IntegrityError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except DatabaseError as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def list(self, request, *args, **kwargs):
         # 밑에 if문은 debug를 위한 임시 get
@@ -74,12 +97,47 @@ class TournamentGameLogsViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         try:
-            return super().create(request, *args, **kwargs)
-        except IntegrityError:  # db의 무결성 제약 조건을 위반할 때 발생하는 에러
-            raise ValidationError({"detail": "동일한 게임이 이미 존재합니다."})
+            response = super().create(request, *args, **kwargs)
+            tournament_name = response.data["tournament_name"]
+            if not tournament_name:
+                return Response(
+                    {"error": "Game이 존재하지 않습니다."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            game_instance = TournamentGameLogs.objects.get(
+                tournament_name=tournament_name,
+                round=response.data["round"],
+            )
+            tournament_name = request.data.get("tournament_name")
+            winner_uuid = request.data.get("winner")
+            loser_uuid = request.data.get("loser")
+            if winner_uuid and loser_uuid and tournament_name:
+                try:
+                    winner_user = Users.objects.get(user_id=winner_uuid)
+                    loser_user = Users.objects.get(user_id=loser_uuid)
+                except ObjectDoesNotExist:
+                    return Response(
+                        {"error": "유저가 존재하지 않습니다."},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+                JoinTournamentGame.objects.create(
+                    game_id=game_instance, user_id=winner_user
+                )
+                JoinTournamentGame.objects.create(
+                    game_id=game_instance, user_id=loser_user
+                )
+            return response
+
+        except IntegrityError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except DatabaseError as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def list(self, request, *args, **kwargs):
         # 밑에 if문은 debug를 위한 임시 get
+        print(kwargs)
         if "fk" not in kwargs and "name" not in kwargs:
             return super().list(request, *args, **kwargs)
 
