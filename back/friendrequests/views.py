@@ -25,8 +25,7 @@ class FriendListViewSet(viewsets.ModelViewSet):
         status = kwargs["status"]
         if status == "pending":
             queryset = self.queryset.filter(
-                Q(Q(request_user_id=user_id) | Q(response_user_id=user_id))
-                & Q(status="0")
+                Q(response_user_id=user_id) & Q(status="pending")
             )
         elif status == "accepted":
             queryset = self.queryset.filter(
