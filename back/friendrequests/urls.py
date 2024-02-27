@@ -5,6 +5,7 @@ urlpatterns = [
     path(
         "friend_requests/<uuid:user_id>/<str:status>/",
         views.FriendListViewSet.as_view({"get": "list"}),
+        name="friend_list",
     ),
     path(
         "friend_requests/<uuid:request_id>/",
@@ -14,6 +15,7 @@ urlpatterns = [
                 "delete": "destroy",
             }
         ),
+        name="friend_requests_detail",
     ),
     path(
         "friend_requests/",
@@ -22,5 +24,6 @@ urlpatterns = [
                 "post": "create",
             }
         ),
+        name="friend_requests",
     ),
 ]
