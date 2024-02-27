@@ -16,7 +16,6 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.contrib.auth import logout
 
 
-
 # https://squirmm.tistory.com/entry/Django-DRF-Method-Override-%EB%B0%A9%EB%B2%95
 class UsersViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
