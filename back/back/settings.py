@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Third-party apps
     "corsheaders",
+    "drf_yasg",
     "rest_framework",
     "rest_framework.authtoken",
     "allauth",
@@ -123,24 +124,24 @@ WSGI_APPLICATION = "back.wsgi.application"
 #     }
 # }
 # sqlite3 for test
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
-
-# postgresql for local development
 # DATABASES = {
 #     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "NAME": "tail_passengers",
-#         "USER": "postgres",
-#         "PASSWORD": "password",
-#         "HOST": "localhost",
-#         "PORT": "",
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
 #     }
 # }
+
+# postgresql for local development
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "tail_passengers",
+        "USER": "postgres",
+        "PASSWORD": "password",
+        "HOST": "localhost",
+        "PORT": "",
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
