@@ -43,7 +43,7 @@ class UsersViewSetTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-class users_detailViewSetTest(APITestCase):
+class UsersDetailViewSetTest(APITestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(intra_id="3")
         self.other_user = get_user_model().objects.create_user(intra_id="4")
