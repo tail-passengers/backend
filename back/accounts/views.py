@@ -71,6 +71,14 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
         "user_permissions",
     )
 
+    def list(self, request, *args, **kwargs):
+        """
+        GET method override
+        """
+        queryset = Users.objects.filter(pk=kwargs["pk"])
+        serializer = UsersDetailSerializer(queryset, many=True)
+        return Response(serializer.data)
+
     def destroy(self, request, *args, **kwargs):
         """
         DELETE method override
@@ -120,12 +128,12 @@ class Login42APIView(APIView):
         client_id = os.environ.get("CLIENT_ID")
         response_type = "code"
         redirect_uri = os.environ.get("REDIRECT_URI")
-        state = str(uuid.uuid4())
-        request.session["state"] = state
+        state = os.environ.get("STATE")
         oauth_42_api_url = "https://api.intra.42.fr/oauth/authorize"
         return redirect(
             f"{oauth_42_api_url}?client_id={client_id}&redirect_uri={redirect_uri}&response_type={response_type}&state={state}"
         )
+
 
 
 # https://soyoung-new-challenge.tistory.com/92
@@ -136,7 +144,7 @@ class CallbackAPIView(APIView):
 
         if (
             request.session.get("state")
-            and not request.GET.get("state") == request.session["state"]
+            and not request.GET.get("state") == os.environ.get("STATE")
         ):
             raise ValidationError({"detail": "oauth중 state 검증 실패."})
 
