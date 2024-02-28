@@ -1,6 +1,6 @@
 from django.db.models import Q
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated, BasePermission
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from .models import FriendRequests
@@ -24,9 +24,7 @@ class FriendListViewSet(viewsets.ModelViewSet):
 
         status = kwargs["status"]
         if status == "pending":
-            queryset = self.queryset.filter(
-                Q(response_user_id=user_id) & Q(status="pending")
-            )
+            queryset = self.queryset.filter(Q(response_user_id=user_id) & Q(status="0"))
         elif status == "accepted":
             queryset = self.queryset.filter(
                 Q(Q(request_user_id=user_id) | Q(response_user_id=user_id))
@@ -84,6 +82,10 @@ class FriendRequestDetailViewSet(viewsets.ModelViewSet):
         if owner != instance.response_user_id:
             raise ValidationError(
                 {"detail": "자신이 아닌 다른 사람의 친구 요청을 거절할 수 없습니다."}
+            )
+        if instance.status == "1":
+            raise ValidationError(
+                {"detail": "이미 수락한 친구 요청을 거절할 수 없습니다."}
             )
         return super().partial_update(request, *args, **kwargs)
 
