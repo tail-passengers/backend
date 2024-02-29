@@ -329,8 +329,7 @@ class FriendRequestDetailViewSetTestCase(APITestCase):
             "friend_requests_detail",
             kwargs={"request_id": self.friend_request2.request_id},
         )
-        data = {"status": "invalid"}
-        response = self.client.delete(url, data)
+        response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_delete_friend_request_another_user(self):
