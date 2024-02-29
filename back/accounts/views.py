@@ -156,7 +156,7 @@ class CallbackAPIView(APIView):
         )
         user_info = user_info_request.json()
         login_id = user_info["login"]
-        image_address = user_info["image"]["versions"]["small"]
+        image_address = user_info["image"]["versions"]["large"]
         user_instance, created = Users.objects.get_or_create(
             intra_id=login_id,
             nickname=login_id,
