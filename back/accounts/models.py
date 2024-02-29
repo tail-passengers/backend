@@ -6,15 +6,15 @@ from django.db import models
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, intra_id, nickname, **extra_fields):
+    def create_user(self, intra_id, **extra_fields):
         if not intra_id:
             raise ValueError("The Intra ID must be set")
-        user = self.model(intra_id=intra_id, nickname=nickname, **extra_fields)
+        user = self.model(intra_id=intra_id, nickname=intra_id, **extra_fields)
         user.save(using=self._db)
         user.set_unusable_password()
         return user
 
-    def create_superuser(self, intra_id, nickname, **extra_fields):
+    def create_superuser(self, intra_id, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
 
@@ -23,7 +23,7 @@ class UserManager(BaseUserManager):
         if extra_fields.get("is_superuser") is not True:
             raise ValueError("Superuser must have is_superuser=True.")
 
-        return self.create_user(intra_id, nickname, **extra_fields)
+        return self.create_user(intra_id, **extra_fields)
 
 
 class UserStatusEnum(models.TextChoices):

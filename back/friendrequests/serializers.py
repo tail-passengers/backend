@@ -4,7 +4,7 @@ from accounts.serializers import UsersSerializer
 from .models import FriendRequests
 
 
-class FriendRequestSerializer(serializers.ModelSerializer):
+class FriendListSerializer(serializers.ModelSerializer):
     friend_request = UsersSerializer(read_only=True)
 
     class Meta:
@@ -14,7 +14,29 @@ class FriendRequestSerializer(serializers.ModelSerializer):
             "request_user_id",
             "response_user_id",
             "status",
-            "created_time",
-            "updated_time",
+            "friend_request",
+        )
+
+
+class FriendRequestSerializer(serializers.ModelSerializer):
+    friend_request = UsersSerializer(read_only=True)
+
+    class Meta:
+        model = FriendRequests
+        fields = (
+            "request_id",
+            "request_user_id",
+            "response_user_id",
+            "friend_request",
+        )
+
+
+class FriendRequestDetailSerializer(serializers.ModelSerializer):
+    friend_request = UsersSerializer(read_only=True)
+
+    class Meta:
+        model = FriendRequests
+        fields = (
+            "status",
             "friend_request",
         )

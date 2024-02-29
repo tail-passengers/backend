@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Third-party apps
     "corsheaders",
+    "drf_yasg",
     "rest_framework",
     "rest_framework.authtoken",
     "allauth",
@@ -122,6 +123,13 @@ DATABASES = {
         "PORT": 5432,
     }
 }
+# sqlite3 for test
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": BASE_DIR / "db.sqlite3",
+#     }
+# }
 
 # postgresql for local development
 # DATABASES = {

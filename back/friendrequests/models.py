@@ -32,7 +32,11 @@ class FriendRequests(models.Model):
     )
     created_time = models.DateTimeField(auto_now_add=True)  # 생성 시간 자동 설정
     updated_time = models.DateTimeField(auto_now=True)  # 업데이트 시간 자동 설정
-    status = models.CharField(max_length=2, choices=RequestStatusEnum.choices)
+    status = models.CharField(
+        max_length=2,
+        choices=RequestStatusEnum.choices,
+        default=RequestStatusEnum.PENDING,
+    )
 
     class Meta:
         db_table = "FriendRequests"
