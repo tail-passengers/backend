@@ -100,7 +100,8 @@ __pycache__/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-media
+back/media/*
+!back/media/test_images/
 back/*/migrations/*
 !back/*/migrations/__init__.py
 
