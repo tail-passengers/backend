@@ -6,7 +6,6 @@ from django.db import models
 class RequestStatusEnum(models.TextChoices):
     ACCEPTED = "1", "Accept"
     PENDING = "0", "Pending"
-    REJECTED = "-1", "Reject"
 
 
 """
