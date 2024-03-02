@@ -42,8 +42,8 @@ class GeneralGameLogsViewSetTest(APITestCase):
         인증이 있을때 201 상태 코드 확인
         """
         self.client.force_authenticate(user=self.user1)
-        winner = self.user1.user_id
-        loser = self.user2.user_id
+        winner = self.user1.intra_id
+        loser = self.user2.intra_id
         data = {
             "start_time": self.start_time,
             "end_time": self.end_time,
@@ -57,8 +57,8 @@ class GeneralGameLogsViewSetTest(APITestCase):
         game_log = GeneralGameLogs.objects.get(game_id=response.data["game_id"])
         self.assertEqual(game_log.start_time, self.start_time)
         self.assertEqual(game_log.end_time, self.end_time)
-        self.assertEqual(game_log.winner.user_id, winner)
-        self.assertEqual(game_log.loser.user_id, loser)
+        self.assertEqual(game_log.winner.intra_id, winner)
+        self.assertEqual(game_log.loser.intra_id, loser)
 
         # JoinGeneralGame 모델에 게임 로그가 생성 하는지 확인
         self.assertTrue(JoinGeneralGame.objects.filter(user_id=self.user1).exists())
@@ -75,8 +75,8 @@ class GeneralGameLogsViewSetTest(APITestCase):
         winner랑 loser가 동일할때 테스트
         """
         self.client.force_authenticate(user=self.user1)
-        winner = self.user1.user_id
-        loser = self.user1.user_id
+        winner = self.user1.intra_id
+        loser = self.user1.intra_id
         data = {
             "start_time": self.start_time,
             "end_time": self.end_time,
@@ -91,8 +91,8 @@ class GeneralGameLogsViewSetTest(APITestCase):
         시작 시간이 끝나는 시간보다 이전인지 확인하는 테스트
         """
         self.client.force_authenticate(user=self.user1)
-        winner = self.user1.user_id
-        loser = self.user2.user_id
+        winner = self.user1.intra_id
+        loser = self.user2.intra_id
         data = {
             "start_time": self.end_time,
             "end_time": self.start_time,
@@ -107,8 +107,8 @@ class GeneralGameLogsViewSetTest(APITestCase):
         끝나는 시간이 미래보다 전인지 확인하는 테스트
         """
         self.client.force_authenticate(user=self.user1)
-        winner = self.user1.user_id
-        loser = self.user2.user_id
+        winner = self.user1.intra_id
+        loser = self.user2.intra_id
 
         data = {
             "start_time": self.end_time,
@@ -121,11 +121,11 @@ class GeneralGameLogsViewSetTest(APITestCase):
 
     def test_get_general_game_log_uuid_fk(self):
         """
-        get으로 create한 general_game_log/<uuid:fk>/ 잘 가져오는지 확인하는 테스트
+        get으로 create한 general_game_log/<str:intra_id>/ 잘 가져오는지 확인하는 테스트
         """
         self.client.force_authenticate(user=self.user1)
-        winner = self.user1.user_id
-        loser = self.user2.user_id
+        winner = self.user1.intra_id
+        loser = self.user2.intra_id
         data = {
             "start_time": self.start_time,
             "end_time": self.end_time,
@@ -137,14 +137,16 @@ class GeneralGameLogsViewSetTest(APITestCase):
 
         # get 으로 요청
         response = self.client.get(
-            reverse("general_game_logs_detail", kwargs={"fk": self.user1.user_id})
+            reverse(
+                "general_game_logs_detail", kwargs={"intra_id": self.user1.intra_id}
+            )
         )
 
         # get 데이터 확인
         self.assertEqual(response.data[0]["start_time"], self.start_time.isoformat())
         self.assertEqual(response.data[0]["end_time"], self.end_time.isoformat())
-        self.assertEqual(response.data[0]["winner"], winner)
-        self.assertEqual(response.data[0]["loser"], loser)
+        self.assertEqual(response.data[0]["winner_intra_id"], winner)
+        self.assertEqual(response.data[0]["loser_intra_id"], loser)
 
 
 class TournamentGameLogsViewSetTest(APITestCase):
@@ -167,8 +169,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
         data = {
             "tournament_name": self.tournament_name,
             "round": 1,
-            "winner": self.user1.user_id,
-            "loser": self.user2.user_id,
+            "winner": self.user1.intra_id,
+            "loser": self.user2.intra_id,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -185,8 +187,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
         data = {
             "tournament_name": self.tournament_name,
             "round": 1,
-            "winner": self.user1.user_id,
-            "loser": self.user2.user_id,
+            "winner": self.user1.intra_id,
+            "loser": self.user2.intra_id,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -201,8 +203,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
         )
         self.assertEqual(game_log.tournament_name, self.tournament_name)
         self.assertEqual(game_log.round, 1)
-        self.assertEqual(game_log.winner.user_id, self.user1.user_id)
-        self.assertEqual(game_log.loser.user_id, self.user2.user_id)
+        self.assertEqual(game_log.winner.intra_id, self.user1.intra_id)
+        self.assertEqual(game_log.loser.intra_id, self.user2.intra_id)
         self.assertEqual(game_log.start_time, self.start_time)
         self.assertEqual(game_log.end_time, self.end_time)
         self.assertEqual(game_log.is_final, False)
@@ -228,8 +230,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
         data = {
             "tournament_name": self.tournament_name,
             "round": 1,
-            "winner": self.user1.user_id,
-            "loser": self.user1.user_id,
+            "winner": self.user1.intra_id,
+            "loser": self.user1.intra_id,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -246,8 +248,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
         data = {
             "tournament_name": self.tournament_name,
             "round": 1,
-            "winner": self.user1.user_id,
-            "loser": self.user2.user_id,
+            "winner": self.user1.intra_id,
+            "loser": self.user2.intra_id,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -258,8 +260,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
         data2 = {
             "tournament_name": self.tournament_name,
             "round": 2,
-            "winner": self.user3.user_id,
-            "loser": self.user4.user_id,
+            "winner": self.user3.intra_id,
+            "loser": self.user4.intra_id,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -270,8 +272,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
         data3 = {
             "tournament_name": self.tournament_name,
             "round": 3,
-            "winner": self.user3.user_id,
-            "loser": self.user1.user_id,
+            "winner": self.user3.intra_id,
+            "loser": self.user1.intra_id,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": True,
@@ -287,8 +289,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
         data = {
             "tournament_name": self.tournament_name,
             "round": 1,
-            "winner": self.user1.user_id,
-            "loser": self.user2.user_id,
+            "winner": self.user1.intra_id,
+            "loser": self.user2.intra_id,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -299,8 +301,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
         data2 = {
             "tournament_name": self.tournament_name,
             "round": 1,
-            "winner": self.user3.user_id,
-            "loser": self.user4.user_id,
+            "winner": self.user3.intra_id,
+            "loser": self.user4.intra_id,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -317,8 +319,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
         data = {
             "tournament_name": self.tournament_name,
             "round": 1,
-            "winner": self.user1.user_id,
-            "loser": self.user2.user_id,
+            "winner": self.user1.intra_id,
+            "loser": self.user2.intra_id,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -329,8 +331,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
         data2 = {
             "tournament_name": self.tournament_name,
             "round": 2,
-            "winner": self.user3.user_id,
-            "loser": self.user4.user_id,
+            "winner": self.user3.intra_id,
+            "loser": self.user4.intra_id,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -341,8 +343,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
         data3 = {
             "tournament_name": self.tournament_name,
             "round": 3,
-            "winner": self.user3.user_id,
-            "loser": self.user1.user_id,
+            "winner": self.user3.intra_id,
+            "loser": self.user1.intra_id,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": True,
@@ -354,12 +356,14 @@ class TournamentGameLogsViewSetTest(APITestCase):
             reverse("tournament_name_logs", kwargs={"name": self.tournament_name})
         )
         assert len(response.data) == 3
-        self.assertEqual(self.user1.user_id, response.data[0]["winner"])
-        self.assertEqual(self.user3.user_id, response.data[1]["winner"])
-        self.assertEqual(self.user3.user_id, response.data[2]["winner"])
+        self.assertEqual(self.user1.intra_id, response.data[0]["winner_intra_id"])
+        self.assertEqual(self.user3.intra_id, response.data[1]["winner_intra_id"])
+        self.assertEqual(self.user3.intra_id, response.data[2]["winner_intra_id"])
 
         response = self.client.get(
-            reverse("tournament_game_user_logs", kwargs={"fk": self.user1.user_id})
+            reverse(
+                "tournament_game_user_logs", kwargs={"intra_id": self.user1.intra_id}
+            )
         )
         assert len(response.data) == 2
         self.assertEqual(1, response.data[0]["round"])
