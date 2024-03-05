@@ -9,7 +9,7 @@ urlpatterns = [
         name="users",
     ),
     path(
-        "users/<uuid:pk>/",
+        "users/<str:intra_id>/",
         views.UsersDetailViewSet.as_view(
             {"get": "list", "patch": "partial_update", "delete": "destroy"}
         ),
