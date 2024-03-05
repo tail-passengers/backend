@@ -28,17 +28,17 @@ class FriendListViewSet(viewsets.ModelViewSet):
             raise ValidationError({"detail": "존재하지 않는 사용자입니다."})
         user_id = queryset.first().user_id
         if user_id != request.user.user_id:
-            raise ValidationError({"detail": "자신의 친구 목록만 볼 수 있습니다."})
+            return Response({"error": "자신의 친구 목록만 볼 수 있습니다."}, status=status.HTTP_403_FORBIDDEN)
 
-        status = kwargs["status"]
-        if status == "pending":
+        url_status = kwargs["status"]
+        if url_status == "pending":
             queryset = self.queryset.filter(Q(response_user_id=user_id) & Q(status="0"))
-        elif status == "accepted":
+        elif url_status == "accepted":
             queryset = self.queryset.filter(
                 Q(Q(request_user_id=user_id) | Q(response_user_id=user_id))
                 & Q(status="1")
             )
-        elif status == "all":
+        elif url_status == "all":
             queryset = self.queryset.filter(
                 Q(request_user_id=user_id) | Q(response_user_id=user_id)
             )

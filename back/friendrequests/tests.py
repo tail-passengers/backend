@@ -95,7 +95,7 @@ class FriendListViewSetTestCase(APITestCase):
             "friend_list", kwargs={"intra_id": self.user1.intra_id, "status": "all"}
         )
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class FriendRequestViewSetTestCase(APITestCase):
