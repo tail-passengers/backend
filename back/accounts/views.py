@@ -77,6 +77,8 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
         GET method override
         """
         queryset = UsersViewSet.queryset.filter(intra_id=kwargs["intra_id"])
+        if not queryset.exists():
+            raise ValidationError({"detail": "존재하지 않는 사용자입니다."})
         serializer = UsersDetailSerializer(queryset, many=True)
         return Response(serializer.data)
 

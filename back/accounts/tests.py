@@ -26,6 +26,8 @@ class UsersViewSetTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+
+
     def test_add_user(self):
         """
         디버그용 post 잘 작동하는지 확인
@@ -47,6 +49,15 @@ class UsersDetailViewSetTest(APITestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(intra_id="3")
         self.other_user = get_user_model().objects.create_user(intra_id="4")
+
+    def test_get_not_exists_user(self):
+        """
+        없는 유저일때 get test
+        """
+        self.client.force_authenticate(user=self.user)
+        url = reverse("users_detail", kwargs={"intra_id": 5})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_without_authenticate(self):
         """
