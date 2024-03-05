@@ -28,7 +28,10 @@ class FriendListViewSet(viewsets.ModelViewSet):
             raise ValidationError({"detail": "존재하지 않는 사용자입니다."})
         user_id = queryset.first().user_id
         if user_id != request.user.user_id:
-            return Response({"error": "자신의 친구 목록만 볼 수 있습니다."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "자신의 친구 목록만 볼 수 있습니다."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         url_status = kwargs["status"]
         if url_status == "pending":
@@ -92,7 +95,9 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
 
 class FriendRequestDetailViewSet(viewsets.ModelViewSet):
@@ -107,11 +112,11 @@ class FriendRequestDetailViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         if owner != instance.response_user_id:
             raise ValidationError(
-                {"detail": "자신이 아닌 다른 사람의 친구 요청을 거절할 수 없습니다."}
+                {"detail": "자신이 아닌 다른 사람의 친구 요청을 수락할 수 없습니다."}
             )
         if instance.status == "1":
             raise ValidationError(
-                {"detail": "이미 수락한 친구 요청을 거절할 수 없습니다."}
+                {"detail": "이미 수락한 친구 요청을 다시 수락할 수 없습니다."}
             )
         return super().partial_update(request, *args, **kwargs)
 
