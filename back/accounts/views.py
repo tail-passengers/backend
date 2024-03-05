@@ -52,6 +52,7 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
     queryset = Users.objects.all()
     serializer_class = UsersDetailSerializer
     http_method_names = ["get", "patch", "delete"]  # TODO delete 나중에 제거 예정
+    lookup_field = "intra_id"
 
     # 우선 nickname과 profile_image를 제외한 모든 필드를 수정 불가로 설정
     can_not_change_fields = (
@@ -75,7 +76,9 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
         """
         GET method override
         """
-        queryset = Users.objects.filter(pk=kwargs["pk"])
+        queryset = UsersViewSet.queryset.filter(intra_id=kwargs["intra_id"])
+        if not queryset.exists():
+            raise ValidationError({"detail": "존재하지 않는 사용자입니다."})
         serializer = UsersDetailSerializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -83,26 +86,33 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
         """
         DELETE method override
         """
-        instance = self.get_object()
-        if request.user.pk != kwargs["pk"]:
+        user = Users.objects.get(intra_id=kwargs["intra_id"])
+        if request.user.intra_id != user.intra_id:
             raise PermissionDenied(
                 {"detail": "다른 사용자의 정보는 삭제할 수 없습니다."}
             )
-        if instance.profile_image:
+        if user.profile_image:
             try:
                 os.remove(
-                    os.path.join(settings.MEDIA_ROOT, instance.profile_image.name)
+                    os.path.join(settings.MEDIA_ROOT, user.profile_image.name)
                 )
             except FileNotFoundError:
                 print("File not found")
-        self.perform_destroy(instance)
+        self.perform_destroy(user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def partial_update(self, request, *args, **kwargs):
         """
         PATCH method override
         """
-        if request.user.pk != kwargs["pk"]:
+        try:
+            user = Users.objects.get(intra_id=kwargs["intra_id"])
+        except Users.DoesNotExist:
+            return Response(
+                {"error": "없는 유저입니다."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if request.user.intra_id != user.intra_id:
             raise PermissionDenied(
                 {"detail": "다른 사용자의 정보는 수정할 수 없습니다."}
             )
@@ -111,9 +121,10 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
                 raise PermissionDenied(
                     {"detail": f"{field}는 수정할 수 없는 필드입니다."}
                 )
-        instance = self.get_object()
+        instance = user
         previous_image = instance.profile_image
         response = super().partial_update(request, *args, **kwargs)
+
         if previous_image and request.data.get("profile_image") is not None:
             os.remove(os.path.join(settings.MEDIA_ROOT, previous_image.name))
         return response
