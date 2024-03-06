@@ -3,8 +3,6 @@ from rest_framework import serializers
 from .models import (
     GeneralGameLogs,
     TournamentGameLogs,
-    JoinGeneralGame,
-    JoinTournamentGame,
 )
 from accounts.serializers import UsersSerializer
 
@@ -56,20 +54,6 @@ class GeneralGameLogsListSerializer(serializers.ModelSerializer):
         )
 
 
-class JoinGeneralGameSerializer(serializers.ModelSerializer):
-    user_request = UsersSerializer(read_only=True)
-    game_request = GeneralGameLogsSerializer(read_only=True)
-
-    class Meta:
-        model = JoinGeneralGame
-        fields = (
-            "game_id",
-            "user_id",
-            "user_request",
-            "game_request",
-        )
-
-
 class TournamentGameLogsSerializer(serializers.ModelSerializer):
     user_request = UsersSerializer(many=True, read_only=True)
 
@@ -117,18 +101,4 @@ class TournamentGameLogsListSerializer(serializers.ModelSerializer):
             "end_time",
             "is_final",
             "user_request",
-        )
-
-
-class JoinTournamentGameSerializer(serializers.ModelSerializer):
-    user_request = UsersSerializer(read_only=True)
-    game_request = TournamentGameLogsSerializer(read_only=True)
-
-    class Meta:
-        model = JoinTournamentGame
-        fields = (
-            "game_id",
-            "user_id",
-            "user_request",
-            "game_request",
         )

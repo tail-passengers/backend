@@ -2,27 +2,6 @@ import uuid
 from django.db import models
 
 
-class JoinGeneralGame(models.Model):
-    game_id = models.ForeignKey(
-        "GeneralGameLogs",
-        on_delete=models.CASCADE,
-        db_column="game_id",
-    )
-    user_id = models.ForeignKey(
-        "accounts.Users",
-        on_delete=models.CASCADE,
-        db_column="user_id",
-    )
-
-    class Meta:
-        db_table = "JoinGeneralGame"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["game_id", "user_id"], name="join_general_game_id"
-            )
-        ]
-
-
 class GeneralGameLogs(models.Model):
     game_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     start_time = models.DateTimeField()
@@ -43,27 +22,6 @@ class GeneralGameLogs(models.Model):
     class Meta:
         db_table = "GeneralGameLogs"
         ordering = ["start_time"]
-
-
-class JoinTournamentGame(models.Model):
-    game_id = models.ForeignKey(
-        "TournamentGameLogs",
-        on_delete=models.CASCADE,
-        db_column="game_id",
-    )
-    user_id = models.ForeignKey(
-        "accounts.Users",
-        on_delete=models.CASCADE,
-        db_column="user_id",
-    )
-
-    class Meta:
-        db_table = "JoinTournamentGame"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["game_id", "user_id"], name="join_tournament_game_id"
-            )
-        ]
 
 
 class TournamentGameLogs(models.Model):

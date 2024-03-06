@@ -13,14 +13,10 @@ from .serializers import (
     GeneralGameLogsListSerializer,
     TournamentGameLogsSerializer,
     TournamentGameLogsListSerializer,
-    JoinGeneralGameSerializer,
-    JoinTournamentGameSerializer,
 )
 from .models import (
     GeneralGameLogs,
     TournamentGameLogs,
-    JoinGeneralGame,
-    JoinTournamentGame,
 )
 
 
@@ -67,11 +63,7 @@ def create_with_intra_id_convert_to_user_id(self, request):
     serializer.is_valid(raise_exception=True)
     self.perform_create(serializer)
     headers = self.get_success_headers(serializer.data)
-    return (
-        winner_user,
-        loser_user,
-        Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers),
-    )
+    return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class GeneralGameLogsViewSet(viewsets.ModelViewSet):
@@ -84,19 +76,7 @@ class GeneralGameLogsViewSet(viewsets.ModelViewSet):
     # fk는 uuid가 아닌 인스턴스를 요구해서 생긴 에러인듯
     def create(self, request, *args, **kwargs):
         try:
-            winner_user, loser_user, response = create_with_intra_id_convert_to_user_id(
-                self, request
-            )
-            game_id = response.data["game_id"]
-            if not game_id:
-                return Response(
-                    {"error": "Game이 존재하지 않습니다."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-            game_instance = GeneralGameLogs.objects.get(game_id=game_id)
-            JoinGeneralGame.objects.create(game_id=game_instance, user_id=winner_user)
-            JoinGeneralGame.objects.create(game_id=game_instance, user_id=loser_user)
-            return response
+            return create_with_intra_id_convert_to_user_id(self, request)
 
         except IntegrityError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -127,19 +107,6 @@ class GeneralGameLogsListViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class JoinGeneralGameViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
-    queryset = JoinGeneralGame.objects.all()
-    serializer_class = JoinGeneralGameSerializer
-    http_method_names = []
-
-    def create(self, request, *args, **kwargs):
-        try:
-            return super().create(request, *args, **kwargs)
-        except IntegrityError:  # db의 무결성 제약 조건을 위반할 때 발생하는 에러
-            raise ValidationError({"detail": "동일한 게임의 참가자가 이미 존재합니다."})
-
-
 class TournamentGameLogsViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = TournamentGameLogs.objects.all()
@@ -148,24 +115,7 @@ class TournamentGameLogsViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         try:
-            winner_user, loser_user, response = create_with_intra_id_convert_to_user_id(
-                self, request
-            )
-            tournament_name = response.data["tournament_name"]
-            if not tournament_name:
-                return Response(
-                    {"error": "Game이 존재하지 않습니다."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-            game_instance = TournamentGameLogs.objects.get(
-                tournament_name=tournament_name,
-                round=response.data["round"],
-            )
-            JoinTournamentGame.objects.create(
-                game_id=game_instance, user_id=winner_user
-            )
-            JoinTournamentGame.objects.create(game_id=game_instance, user_id=loser_user)
-            return response
+            return create_with_intra_id_convert_to_user_id(self, request)
 
         except IntegrityError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -201,16 +151,3 @@ class TournamentGameLogsListViewSet(viewsets.ModelViewSet):
             raise ValidationError({"detail": "잘못된 요청입니다."})
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
-
-
-class JoinTournamentGameViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
-    queryset = JoinTournamentGame.objects.all()
-    serializer_class = JoinTournamentGameSerializer
-    http_method_names = []
-
-    def create(self, request, *args, **kwargs):
-        try:
-            return super().create(request, *args, **kwargs)
-        except IntegrityError:  # db의 무결성 제약 조건을 위반할 때 발생하는 에러
-            raise ValidationError({"detail": "동일한 게임의 참가자가 이미 존재합니다."})
