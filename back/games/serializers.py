@@ -39,6 +39,23 @@ class GeneralGameLogsSerializer(serializers.ModelSerializer):
         return data
 
 
+class GeneralGameLogsListSerializer(serializers.ModelSerializer):
+    user_request = UsersSerializer(many=True, read_only=True)
+    winner_intra_id = serializers.CharField(source="winner.intra_id")
+    loser_intra_id = serializers.CharField(source="loser.intra_id")
+
+    class Meta:
+        model = GeneralGameLogs
+        fields = (
+            "game_id",
+            "start_time",
+            "end_time",
+            "winner_intra_id",
+            "loser_intra_id",
+            "user_request",
+        )
+
+
 class JoinGeneralGameSerializer(serializers.ModelSerializer):
     user_request = UsersSerializer(read_only=True)
     game_request = GeneralGameLogsSerializer(read_only=True)
@@ -82,6 +99,25 @@ class TournamentGameLogsSerializer(serializers.ModelSerializer):
         if data["round"] <= 0:
             raise serializers.ValidationError("The round must be a positive number.")
         return data
+
+
+class TournamentGameLogsListSerializer(serializers.ModelSerializer):
+    user_request = UsersSerializer(many=True, read_only=True)
+    winner_intra_id = serializers.CharField(source="winner.intra_id")
+    loser_intra_id = serializers.CharField(source="loser.intra_id")
+
+    class Meta:
+        model = TournamentGameLogs
+        fields = (
+            "tournament_name",
+            "round",
+            "winner_intra_id",
+            "loser_intra_id",
+            "start_time",
+            "end_time",
+            "is_final",
+            "user_request",
+        )
 
 
 class JoinTournamentGameSerializer(serializers.ModelSerializer):

@@ -3,9 +3,18 @@ from . import views
 
 urlpatterns = [
     path(
-        "friend_requests/<uuid:user_id>/<str:status>/",
+        "friend_requests/<str:intra_id>/<str:status>/",
         views.FriendListViewSet.as_view({"get": "list"}),
         name="friend_list",
+    ),
+    path(
+        "friend_requests/",
+        views.FriendRequestViewSet.as_view(
+            {
+                "post": "create",
+            }
+        ),
+        name="friend_requests",
     ),
     path(
         "friend_requests/<uuid:request_id>/",
@@ -17,13 +26,5 @@ urlpatterns = [
         ),
         name="friend_requests_detail",
     ),
-    path(
-        "friend_requests/",
-        views.FriendRequestViewSet.as_view(
-            {
-                "post": "create",
-            }
-        ),
-        name="friend_requests",
-    ),
+
 ]

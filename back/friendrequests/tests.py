@@ -34,7 +34,7 @@ class FriendListViewSetTestCase(APITestCase):
         인증 없이 친구 요청 리스트 확인 시, 403 에러 확인
         """
         url = reverse(
-            "friend_list", kwargs={"user_id": self.user1.user_id, "status": "all"}
+            "friend_list", kwargs={"intra_id": self.user1.intra_id, "status": "all"}
         )
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -45,7 +45,7 @@ class FriendListViewSetTestCase(APITestCase):
         """
         self.client.force_authenticate(user=self.user1)
         url = reverse(
-            "friend_list", kwargs={"user_id": self.user1.user_id, "status": "all"}
+            "friend_list", kwargs={"intra_id": self.user1.intra_id, "status": "all"}
         )
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -55,9 +55,9 @@ class FriendListViewSetTestCase(APITestCase):
         """
         pending 친구 요청 리스트 확인
         """
-        self.client.force_authenticate(user=self.user1)
+        self.client.force_authenticate(user=self.user2)
         url = reverse(
-            "friend_list", kwargs={"user_id": self.user2.user_id, "status": "pending"}
+            "friend_list", kwargs={"intra_id": self.user2.intra_id, "status": "pending"}
         )
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -69,7 +69,7 @@ class FriendListViewSetTestCase(APITestCase):
         """
         self.client.force_authenticate(user=self.user1)
         url = reverse(
-            "friend_list", kwargs={"user_id": self.user1.user_id, "status": "accepted"}
+            "friend_list", kwargs={"intra_id": self.user1.intra_id, "status": "accepted"}
         )
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -81,10 +81,21 @@ class FriendListViewSetTestCase(APITestCase):
         """
         self.client.force_authenticate(user=self.user1)
         url = reverse(
-            "friend_list", kwargs={"user_id": self.user1.user_id, "status": "invalid"}
+            "friend_list", kwargs={"intra_id": self.user1.intra_id, "status": "invalid"}
         )
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_get_list_another_user(self):
+        """
+        다른 유저의 친구 요청 리스트 확인 시, 403 에러 확인
+        """
+        self.client.force_authenticate(user=self.user2)
+        url = reverse(
+            "friend_list", kwargs={"intra_id": self.user1.intra_id, "status": "all"}
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class FriendRequestViewSetTestCase(APITestCase):
@@ -120,8 +131,8 @@ class FriendRequestViewSetTestCase(APITestCase):
         인증 없이 친구 요청 생성 시, 403 에러 확인
         """
         data = {
-            "request_user_id": self.user1.user_id,
-            "response_user_id": self.user2.user_id,
+            "request_user_id": self.user1.intra_id,
+            "response_user_id": self.user2.intra_id,
         }
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -132,8 +143,8 @@ class FriendRequestViewSetTestCase(APITestCase):
         """
         self.client.force_authenticate(user=self.user1)
         data = {
-            "request_user_id": self.user1.user_id,
-            "response_user_id": self.user2.user_id,
+            "request_user_id": self.user1.intra_id,
+            "response_user_id": self.user2.intra_id,
         }
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -144,8 +155,8 @@ class FriendRequestViewSetTestCase(APITestCase):
         """
         self.client.force_authenticate(user=self.user1)
         data = {
-            "request_user_id": self.user1.user_id,
-            "response_user_id": self.user1.user_id,
+            "request_user_id": self.user1.intra_id,
+            "response_user_id": self.user1.intra_id,
         }
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -156,8 +167,8 @@ class FriendRequestViewSetTestCase(APITestCase):
         """
         self.client.force_authenticate(user=self.user2)
         data = {
-            "request_user_id": self.user2.user_id,
-            "response_user_id": self.user3.user_id,
+            "request_user_id": self.user2.intra_id,
+            "response_user_id": self.user3.intra_id,
         }
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -168,8 +179,8 @@ class FriendRequestViewSetTestCase(APITestCase):
         """
         self.client.force_authenticate(user=self.user2)
         data = {
-            "request_user_id": self.user3.user_id,
-            "response_user_id": self.user2.user_id,
+            "request_user_id": self.user3.intra_id,
+            "response_user_id": self.user2.intra_id,
         }
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -180,8 +191,8 @@ class FriendRequestViewSetTestCase(APITestCase):
         """
         self.client.force_authenticate(user=self.user3)
         data = {
-            "request_user_id": self.user3.user_id,
-            "response_user_id": self.user4.user_id,
+            "request_user_id": self.user3.intra_id,
+            "response_user_id": self.user4.intra_id,
         }
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -192,15 +203,15 @@ class FriendRequestViewSetTestCase(APITestCase):
         """
         self.client.force_authenticate(user=self.user1)
         data = {
-            "request_user_id": self.user2.user_id,
-            "response_user_id": self.user3.user_id,
+            "request_user_id": self.user2.intra_id,
+            "response_user_id": self.user3.intra_id,
         }
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
         data = {
-            "request_user_id": self.user3.user_id,
-            "response_user_id": self.user1.user_id,
+            "request_user_id": self.user3.intra_id,
+            "response_user_id": self.user1.intra_id,
         }
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
