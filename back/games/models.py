@@ -6,17 +6,17 @@ class GeneralGameLogs(models.Model):
     game_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
-    winner = models.ForeignKey(
+    player1 = models.ForeignKey(
         "accounts.Users",
         on_delete=models.CASCADE,
-        db_column="winner",
-        related_name="general_winner",
+        db_column="player1",
+        related_name="general_player1",
     )
-    loser = models.ForeignKey(
+    player2 = models.ForeignKey(
         "accounts.Users",
         on_delete=models.CASCADE,
-        db_column="loser",
-        related_name="general_loser",
+        db_column="player2",
+        related_name="general_player2",
     )
 
     class Meta:
@@ -27,17 +27,17 @@ class GeneralGameLogs(models.Model):
 class TournamentGameLogs(models.Model):
     tournament_name = models.CharField(max_length=20)
     round = models.IntegerField()
-    winner = models.ForeignKey(
+    player1 = models.ForeignKey(
         "accounts.Users",
         on_delete=models.CASCADE,
-        db_column="winner",
-        related_name="tournament_winner",
+        db_column="player1",
+        related_name="tournament_player1",
     )
-    loser = models.ForeignKey(
+    player2 = models.ForeignKey(
         "accounts.Users",
         on_delete=models.CASCADE,
-        db_column="loser",
-        related_name="tournament_loser",
+        db_column="player2",
+        related_name="tournament_player2",
     )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()

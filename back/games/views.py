@@ -49,15 +49,15 @@ def create_with_intra_id_convert_to_user_id(self, request):
     """
     intra_id를 user_id로 변환하여 Game Log를 생성
     """
-    winner_intra_id = request.data.get("winner")
-    loser_intra_id = request.data.get("loser")
+    player1_intra_id = request.data.get("player1_intra_id")
+    player2_intra_id = request.data.get("player2_intra_id")
 
-    winner_user = get_user_from_intra_id_or_user_id(winner_intra_id)
-    loser_user = get_user_from_intra_id_or_user_id(loser_intra_id)
+    player1_user = get_user_from_intra_id_or_user_id(player1_intra_id)
+    player2_user = get_user_from_intra_id_or_user_id(player2_intra_id)
 
     request_copy_data = request.data.copy()
-    request_copy_data["winner"] = winner_user.user_id
-    request_copy_data["loser"] = loser_user.user_id
+    request_copy_data["player1"] = player1_user.user_id
+    request_copy_data["player2"] = player2_user.user_id
 
     serializer = self.get_serializer(data=request_copy_data)
     serializer.is_valid(raise_exception=True)
@@ -70,7 +70,7 @@ class GeneralGameLogsViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = GeneralGameLogs.objects.all()
     serializer_class = GeneralGameLogsSerializer
-    http_method_names = ["get", "post"]  # TODO debug를 위해 get 임시 추가
+    http_method_names = ["post"]
 
     # general game logs 생성 시 join general game 생성하는 오버라이딩 에러 발생
     # fk는 uuid가 아닌 인스턴스를 요구해서 생긴 에러인듯
@@ -102,7 +102,9 @@ class GeneralGameLogsListViewSet(viewsets.ModelViewSet):
                 {"error": "유저가 존재하지 않습니다."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        queryset = self.queryset.filter(Q(winner=user.user_id) | Q(loser=user.user_id))
+        queryset = self.queryset.filter(
+            Q(player1=user.user_id) | Q(player2=user.user_id)
+        )
         serializer = self.serializer_class(queryset, many=True)
         return Response(serializer.data)
 
@@ -111,7 +113,7 @@ class TournamentGameLogsViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = TournamentGameLogs.objects.all()
     serializer_class = TournamentGameLogsSerializer
-    http_method_names = ["get", "post"]  # TODO debug를 위해 get 임시 추가
+    http_method_names = ["post"]
 
     def create(self, request, *args, **kwargs):
         try:
@@ -143,7 +145,7 @@ class TournamentGameLogsListViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_404_NOT_FOUND,
                 )
             queryset = self.queryset.filter(
-                Q(winner=user.user_id) | Q(loser=user.user_id)
+                Q(player1=user.user_id) | Q(player2=user.user_id)
             )
         elif "name" in kwargs and "intra_id" not in kwargs:
             queryset = self.queryset.filter(tournament_name=kwargs["name"])
