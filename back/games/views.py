@@ -92,7 +92,6 @@ class GeneralGameLogsListViewSet(viewsets.ModelViewSet):
     serializer_class = GeneralGameLogsListSerializer
 
     def list(self, request, *args, **kwargs):
-        # 밑에 if문은 debug를 위한 임시 get
         if "intra_id" not in kwargs:
             return super().list(request, *args, **kwargs)
 
@@ -133,7 +132,6 @@ class TournamentGameLogsListViewSet(viewsets.ModelViewSet):
     serializer_class = TournamentGameLogsListSerializer
 
     def list(self, request, *args, **kwargs):
-        # 밑에 if문은 debug를 위한 임시 get
         if "intra_id" not in kwargs and "name" not in kwargs:
             return super().list(request, *args, **kwargs)
 
