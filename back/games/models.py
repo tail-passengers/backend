@@ -18,6 +18,8 @@ class GeneralGameLogs(models.Model):
         db_column="player2",
         related_name="general_player2",
     )
+    player1_score = models.IntegerField()
+    player2_score = models.IntegerField()
 
     class Meta:
         db_table = "GeneralGameLogs"
@@ -39,6 +41,8 @@ class TournamentGameLogs(models.Model):
         db_column="player2",
         related_name="tournament_player2",
     )
+    player1_score = models.IntegerField()
+    player2_score = models.IntegerField()
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     is_final = models.BooleanField()

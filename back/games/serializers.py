@@ -35,6 +35,8 @@ class GeneralGameLogsSerializer(serializers.ModelSerializer):
             "end_time",
             "player1_intra_id",
             "player2_intra_id",
+            "player1_score",
+            "player2_score",
         )
 
     def create(self, validated_data):
@@ -53,6 +55,8 @@ class GeneralGameLogsSerializer(serializers.ModelSerializer):
         # 끝나는 시간이 현재 시각보다 이후인지 확인
         if data["end_time"] > timezone.now():
             raise serializers.ValidationError("End time must not be in the future.")
+        if data["player1_score"] < 0 or data["player2_score"] < 0:
+            raise serializers.ValidationError("Score must be a non-negative number.")
         return data
 
 
@@ -68,6 +72,8 @@ class GeneralGameLogsListSerializer(serializers.ModelSerializer):
             "end_time",
             "player1_user",
             "player2_user",
+            "player1_score",
+            "player2_score",
         )
 
     def create(self, validated_data):
@@ -85,6 +91,8 @@ class TournamentGameLogsSerializer(serializers.ModelSerializer):
             "round",
             "player1_intra_id",
             "player2_intra_id",
+            "player1_score",
+            "player2_score",
             "start_time",
             "end_time",
             "is_final",
@@ -105,6 +113,8 @@ class TournamentGameLogsSerializer(serializers.ModelSerializer):
         # 라운드가 양수인지 확인
         if data["round"] <= 0:
             raise serializers.ValidationError("The round must be a positive number.")
+        if data["player1_score"] < 0 or data["player2_score"] < 0:
+            raise serializers.ValidationError("Score must be a non-negative number.")
         return data
 
 
@@ -119,6 +129,8 @@ class TournamentGameLogsListSerializer(serializers.ModelSerializer):
             "round",
             "player1_user",
             "player2_user",
+            "player1_score",
+            "player2_score",
             "start_time",
             "end_time",
             "is_final",

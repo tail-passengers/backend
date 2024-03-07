@@ -30,6 +30,8 @@ class GeneralGameLogsViewSetTest(APITestCase):
             "end_time": "2021-01-01T01:00:00Z",
             "player1_intra_id": self.user1.intra_id,
             "player2_intra_id": self.user2.intra_id,
+            "player1_score": 5,
+            "player2_score": 3,
         }
         response = self.client.post(self.create_url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -46,6 +48,8 @@ class GeneralGameLogsViewSetTest(APITestCase):
             "end_time": self.end_time,
             "player1_intra_id": player1,
             "player2_intra_id": player2,
+            "player1_score": 5,
+            "player2_score": 3,
         }
         response = self.client.post(self.create_url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -69,6 +73,8 @@ class GeneralGameLogsViewSetTest(APITestCase):
             "end_time": self.end_time,
             "player1_intra_id": player1,
             "player2_intra_id": player2,
+            "player1_score": 5,
+            "player2_score": 3,
         }
         response = self.client.post(self.create_url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -85,6 +91,8 @@ class GeneralGameLogsViewSetTest(APITestCase):
             "end_time": self.start_time,
             "player1_intra_id": player1,
             "player2_intra_id": player2,
+            "player1_score": 5,
+            "player2_score": 3,
         }
         response = self.client.post(self.create_url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -102,6 +110,8 @@ class GeneralGameLogsViewSetTest(APITestCase):
             "end_time": datetime.now() + timedelta(hours=2),
             "player1_intra_id": player1,
             "player2_intra_id": player2,
+            "player1_score": 5,
+            "player2_score": 3,
         }
         response = self.client.post(self.create_url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -118,6 +128,8 @@ class GeneralGameLogsViewSetTest(APITestCase):
             "end_time": self.end_time,
             "player1_intra_id": player1,
             "player2_intra_id": player2,
+            "player1_score": 5,
+            "player2_score": 3,
         }
         response = self.client.post(self.create_url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -132,6 +144,24 @@ class GeneralGameLogsViewSetTest(APITestCase):
         self.assertEqual(response.data[0]["end_time"], self.end_time.isoformat())
         self.assertEqual(response.data[0]["player1_user"]["intra_id"], player1)
         self.assertEqual(response.data[0]["player2_user"]["intra_id"], player2)
+
+    def test_score_minus(self):
+        """
+        점수가 음수일 때 테스트
+        """
+        self.client.force_authenticate(user=self.user1)
+        player1 = self.user1.intra_id
+        player2 = self.user2.intra_id
+        data = {
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "player1_intra_id": player1,
+            "player2_intra_id": player2,
+            "player1_score": -1,
+            "player2_score": 3,
+        }
+        response = self.client.post(self.create_url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class TournamentGameLogsViewSetTest(APITestCase):
@@ -156,6 +186,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
             "round": 1,
             "player1_intra_id": self.user1.intra_id,
             "player2_intra_id": self.user2.intra_id,
+            "player1_score": 5,
+            "player2_score": 3,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -174,6 +206,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
             "round": 1,
             "player1_intra_id": self.user1.intra_id,
             "player2_intra_id": self.user2.intra_id,
+            "player1_score": 5,
+            "player2_score": 3,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -204,6 +238,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
             "round": 1,
             "player1_intra_id": self.user1.intra_id,
             "player2_intra_id": self.user1.intra_id,
+            "player1_score": 5,
+            "player2_score": 3,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -222,6 +258,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
             "round": 1,
             "player1_intra_id": self.user1.intra_id,
             "player2_intra_id": self.user2.intra_id,
+            "player1_score": 5,
+            "player2_score": 3,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -234,6 +272,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
             "round": 2,
             "player1_intra_id": self.user3.intra_id,
             "player2_intra_id": self.user4.intra_id,
+            "player1_score": 5,
+            "player2_score": 3,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -246,6 +286,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
             "round": 3,
             "player1_intra_id": self.user3.intra_id,
             "player2_intra_id": self.user1.intra_id,
+            "player1_score": 5,
+            "player2_score": 3,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": True,
@@ -263,6 +305,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
             "round": 1,
             "player1_intra_id": self.user1.intra_id,
             "player2_intra_id": self.user2.intra_id,
+            "player1_score": 5,
+            "player2_score": 3,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -275,6 +319,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
             "round": 1,
             "player1_intra_id": self.user3.intra_id,
             "player2_intra_id": self.user4.intra_id,
+            "player1_score": 5,
+            "player2_score": 3,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -293,6 +339,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
             "round": 1,
             "player1_intra_id": self.user1.intra_id,
             "player2_intra_id": self.user2.intra_id,
+            "player1_score": 5,
+            "player2_score": 3,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -305,6 +353,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
             "round": 2,
             "player1_intra_id": self.user3.intra_id,
             "player2_intra_id": self.user4.intra_id,
+            "player1_score": 5,
+            "player2_score": 3,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": False,
@@ -317,6 +367,8 @@ class TournamentGameLogsViewSetTest(APITestCase):
             "round": 3,
             "player1_intra_id": self.user3.intra_id,
             "player2_intra_id": self.user1.intra_id,
+            "player1_score": 5,
+            "player2_score": 3,
             "start_time": self.start_time,
             "end_time": self.end_time,
             "is_final": True,
@@ -346,3 +398,22 @@ class TournamentGameLogsViewSetTest(APITestCase):
         assert len(response.data) == 2
         self.assertEqual(1, response.data[0]["round"])
         self.assertEqual(3, response.data[1]["round"])
+
+    def test_score_minus(self):
+        """
+        점수가 음수일 때 테스트
+        """
+        self.client.force_authenticate(user=self.user1)
+        data = {
+            "tournament_name": self.tournament_name,
+            "round": 1,
+            "player1_intra_id": self.user1.intra_id,
+            "player2_intra_id": self.user2.intra_id,
+            "player1_score": -5,
+            "player2_score": 3,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "is_final": False,
+        }
+        response = self.client.post(self.create_log, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
