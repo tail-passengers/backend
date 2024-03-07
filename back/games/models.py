@@ -23,7 +23,7 @@ class GeneralGameLogs(models.Model):
 
     class Meta:
         db_table = "GeneralGameLogs"
-        ordering = ["start_time"]
+        ordering = ["-start_time"]
 
 
 class TournamentGameLogs(models.Model):
@@ -49,7 +49,7 @@ class TournamentGameLogs(models.Model):
 
     class Meta:
         db_table = "TournamentGameLogs"
-        ordering = ["start_time"]
+        ordering = ["-start_time"]
         constraints = [
             models.UniqueConstraint(
                 fields=["tournament_name", "round"], name="tournament_game_id"
