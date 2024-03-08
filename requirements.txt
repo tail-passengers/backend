@@ -16,3 +16,5 @@ dj-rest-auth
 python-dotenv
 django-cors-headers
 drf-yasg
+daphne
+channels

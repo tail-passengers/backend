@@ -36,6 +36,8 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    # Daphne must be listed before django.contrib.staticfiles in INSTALLED_APPS. error
+    "daphne",
     "django.contrib.staticfiles",
     # Third-party apps
     "corsheaders",
@@ -47,6 +49,7 @@ INSTALLED_APPS = [
     "accounts",
     "games",
     "friendrequests",
+    "pong_game",
 ]
 
 MIDDLEWARE = [
@@ -190,3 +193,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
 
 AUTH_USER_MODEL = "accounts.Users"
+
+# Daphne
+ASGI_APPLICATION = "back.asgi.application"
