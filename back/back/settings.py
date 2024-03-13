@@ -196,3 +196,12 @@ AUTH_USER_MODEL = "accounts.Users"
 
 # Daphne
 ASGI_APPLICATION = "back.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("channels", 6379)],
+        },
+    },
+}
