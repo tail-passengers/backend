@@ -1,6 +1,4 @@
-import asyncio
 import uuid
-
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from accounts.models import Users, UserStatusEnum
@@ -26,35 +24,43 @@ class LoginConsumer(AsyncWebsocketConsumer):
 
 
 class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
-    intra_id_list, wait_list = set(), deque()
+    intra_id_list, wait_list = list(), deque()
 
     async def connect(self):
         self.user = self.scope["user"]
-        if self.user.is_authenticated and await self.add_wait_list(self):
+        if self.user.is_authenticated and await self.add_wait_list():
             await self.accept()
-            await self.wait_queue()
         else:
             await self.close()
 
-    @classmethod
-    async def wait_queue(cls):
-        while True:
-            if len(cls.wait_list) > 1:
-                game_id = str(uuid.uuid4())
-                player1 = cls.wait_list.popleft()
-                player2 = cls.wait_list.popleft()
-                await player1.send(game_id)
-                await player2.send(game_id)
-                cls.intra_id_list.remove(player1.user.intra_id)
-                cls.intra_id_list.remove(player2.user.intra_id)
-            await asyncio.sleep(1)
+    async def receive(self, text_data):
+        if len(GeneralGameWaitConsumer.wait_list) > 1:
+            await GeneralGameWaitConsumer.wait_queue()
+
+    async def disconnect(self, close_code):
+        if self.user.is_authenticated:
+            if (
+                self in GeneralGameWaitConsumer.wait_list
+                and self.user.intra_id in GeneralGameWaitConsumer.intra_id_list
+            ):
+                GeneralGameWaitConsumer.intra_id_list.remove(self.user.intra_id)
+                GeneralGameWaitConsumer.wait_list.remove(self)
 
     @classmethod
-    async def add_wait_list(cls, self):
-        if self.user.intra_id in cls.intra_id_list:
+    async def wait_queue(cls):
+        data = '{"game_id": ' + f'"{str(uuid.uuid4())}"' + "}"
+        player1 = GeneralGameWaitConsumer.wait_list.popleft()
+        player2 = GeneralGameWaitConsumer.wait_list.popleft()
+        await player1.send(data)
+        await player2.send(data)
+        GeneralGameWaitConsumer.intra_id_list.remove(player1.user.intra_id)
+        GeneralGameWaitConsumer.intra_id_list.remove(player2.user.intra_id)
+
+    async def add_wait_list(self):
+        if self.user.intra_id in GeneralGameWaitConsumer.intra_id_list:
             return False
-        cls.wait_list.append(self)
-        cls.intra_id_list.add(self.user.intra_id)
+        GeneralGameWaitConsumer.wait_list.append(self)
+        GeneralGameWaitConsumer.intra_id_list.append(self.user.intra_id)
         return True
 
 
