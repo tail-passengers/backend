@@ -20,4 +20,7 @@ services:
       - .env_sample
     depends_on:
       - db
-      
+  channels:
+    image: redis
+    ports:
+      - "6379:6379"
