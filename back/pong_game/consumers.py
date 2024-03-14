@@ -30,12 +30,10 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
         self.user = self.scope["user"]
         if self.user.is_authenticated and await self.add_wait_list():
             await self.accept()
+            if len(GeneralGameWaitConsumer.wait_list) > 1:
+                await GeneralGameWaitConsumer.wait_queue()
         else:
             await self.close()
-
-    async def receive(self, text_data):
-        if len(GeneralGameWaitConsumer.wait_list) > 1:
-            await GeneralGameWaitConsumer.wait_queue()
 
     async def disconnect(self, close_code):
         if self.user.is_authenticated:
