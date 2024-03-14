@@ -31,7 +31,7 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
         if self.user.is_authenticated and await self.add_wait_list():
             await self.accept()
             if len(GeneralGameWaitConsumer.wait_list) > 1:
-                await GeneralGameWaitConsumer.wait_queue()
+                await GeneralGameWaitConsumer.game_match()
         else:
             await self.close()
 
@@ -45,7 +45,7 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
                 GeneralGameWaitConsumer.wait_list.remove(self)
 
     @classmethod
-    async def wait_queue(cls):
+    async def game_match(cls):
         data = '{"game_id": ' + f'"{str(uuid.uuid4())}"' + "}"
         player1 = GeneralGameWaitConsumer.wait_list.popleft()
         player2 = GeneralGameWaitConsumer.wait_list.popleft()
