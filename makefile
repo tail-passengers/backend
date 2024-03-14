@@ -7,6 +7,9 @@ debug:
 down:
 	docker-compose -f ./docker-compose.yml down
 
+test:
+	cd ./back/ && python manage.py test --settings=back.test_settings
+
 re: down
 	docker-compose -f ./docker-compose.yml up --build --detach
 
@@ -28,4 +31,4 @@ linux-fclean:
 	docker system prune --all --force --volumes
 
 
-.PHONY: all down re clean
+.PHONY: all down re clean debug test
