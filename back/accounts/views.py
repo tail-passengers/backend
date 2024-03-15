@@ -195,7 +195,7 @@ class CallbackAPIView(APIView):
             user_instance.save()
         # login
         login(request, user_instance)
-        return redirect(f"http://127.0.0.1:8000/users/{user_instance.intra_id}/")
+        return redirect(f"http://127.0.0.1:8000/api/v1/users/{user_instance.intra_id}/")
 
     def _get_access_token(self, request):
         grant_type = "authorization_code"
