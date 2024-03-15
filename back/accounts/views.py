@@ -146,7 +146,9 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
 class Login42APIView(APIView):
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            return redirect(f"http://127.0.0.1:8000/users/{request.user.intra_id}/")
+            return redirect(
+                f"http://127.0.0.1:8000/api/v1/users/{request.user.intra_id}/"
+            )
 
         load_dotenv()
         client_id = os.environ.get("CLIENT_ID")
@@ -163,7 +165,9 @@ class Login42APIView(APIView):
 class CallbackAPIView(APIView):
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            return redirect(f"http://127.0.0.1:8000/users/{request.user.intra_id}/")
+            return redirect(
+                f"http://127.0.0.1:8000/api/v1/users/{request.user.intra_id}/"
+            )
 
         if request.session.get("state") and not request.GET.get(
             "state"
