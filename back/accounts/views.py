@@ -7,7 +7,6 @@ from rest_framework.views import APIView
 from django.shortcuts import redirect
 from django.core.files.base import ContentFile
 from django.conf import settings
-from dotenv import load_dotenv
 from .serializers import UsersSerializer, UsersDetailSerializer
 from .models import Users
 from rest_framework.permissions import IsAuthenticated
@@ -93,9 +92,7 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
             )
         if user.profile_image:
             try:
-                os.remove(
-                    os.path.join(settings.MEDIA_ROOT, user.profile_image.name)
-                )
+                os.remove(os.path.join(settings.MEDIA_ROOT, user.profile_image.name))
             except FileNotFoundError:
                 print("File not found")
         self.perform_destroy(user)
@@ -135,7 +132,6 @@ class Login42APIView(APIView):
         if request.user.is_authenticated:
             return redirect("/")
 
-        load_dotenv()
         client_id = os.environ.get("CLIENT_ID")
         response_type = "code"
         redirect_uri = os.environ.get("REDIRECT_URI")
@@ -146,17 +142,15 @@ class Login42APIView(APIView):
         )
 
 
-
 # https://soyoung-new-challenge.tistory.com/92
 class CallbackAPIView(APIView):
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             return redirect("/")
 
-        if (
-            request.session.get("state")
-            and not request.GET.get("state") == os.environ.get("STATE")
-        ):
+        if request.session.get("state") and not request.GET.get(
+            "state"
+        ) == os.environ.get("STATE"):
             raise ValidationError({"detail": "oauth중 state 검증 실패."})
 
         access_token = self._get_access_token(request)
@@ -185,7 +179,6 @@ class CallbackAPIView(APIView):
         return redirect("http://127.0.0.1:8000/users/")
 
     def _get_access_token(self, request):
-        load_dotenv()
         grant_type = "authorization_code"
         client_id = os.environ.get("CLIENT_ID")
         client_secret = os.environ.get("CLIENT_SECRET")
