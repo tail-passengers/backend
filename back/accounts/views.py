@@ -46,6 +46,21 @@ class UsersViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+class MeViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = Users.objects.all()
+    serializer_class = UsersDetailSerializer
+    http_method_names = ["get"]
+
+    def list(self, request, *args, **kwargs):
+        """
+        GET method override
+        """
+        queryset = UsersViewSet.queryset.filter(intra_id=request.user.intra_id)
+        serializer = UsersDetailSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+
 class UsersDetailViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Users.objects.all()
@@ -130,7 +145,9 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
 class Login42APIView(APIView):
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            return redirect("/")
+            return redirect(
+                f"http://127.0.0.1:8000/api/v1/users/{request.user.intra_id}/"
+            )
 
         client_id = os.environ.get("CLIENT_ID")
         response_type = "code"
@@ -146,7 +163,9 @@ class Login42APIView(APIView):
 class CallbackAPIView(APIView):
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            return redirect("/")
+            return redirect(
+                f"http://127.0.0.1:8000/api/v1/users/{request.user.intra_id}/"
+            )
 
         if request.session.get("state") and not request.GET.get(
             "state"
@@ -176,7 +195,7 @@ class CallbackAPIView(APIView):
             user_instance.save()
         # login
         login(request, user_instance)
-        return redirect("http://127.0.0.1:8000/users/")
+        return redirect(f"http://127.0.0.1:8000/users/{user_instance.intra_id}/")
 
     def _get_access_token(self, request):
         grant_type = "authorization_code"

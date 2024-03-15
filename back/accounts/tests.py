@@ -26,8 +26,6 @@ class UsersViewSetTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-
-
     def test_add_user(self):
         """
         디버그용 post 잘 작동하는지 확인
@@ -43,6 +41,29 @@ class UsersViewSetTest(APITestCase):
         # 중복 id 체크
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class MeViewSetTest(APITestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(intra_id="2")
+
+    def test_get_user_without_authenticate(self):
+        """
+        인증이 없을때 403 에러 확인
+        """
+        url = reverse("me")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_get_user_with_authenticate(self):
+        """
+        인증이 있을때 200 상태 코드 확인
+        """
+        self.client.force_authenticate(user=self.user)
+        url = reverse("me")
+        response = self.client.get(url)
+        self.assertEqual(self.user.intra_id, response.data[0]["intra_id"])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
 class UsersDetailViewSetTest(APITestCase):
