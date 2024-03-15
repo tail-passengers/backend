@@ -19,9 +19,9 @@ schema_view_v1 = get_schema_view(
 )
 
 urlpatterns = [
-    path("", include("games.urls")),
-    path("", include("accounts.urls")),
-    path("", include("friendrequests.urls")),
+    path("api/v1/", include("games.urls")),
+    path("api/v1/", include("accounts.urls")),
+    path("api/v1/", include("friendrequests.urls")),
     re_path(
         r"^swagger(?P<format>\.json|\.yaml)$",
         schema_view_v1.without_ui(cache_timeout=0),
