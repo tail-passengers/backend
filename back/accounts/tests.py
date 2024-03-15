@@ -62,6 +62,7 @@ class MeViewSetTest(APITestCase):
         self.client.force_authenticate(user=self.user)
         url = reverse("me")
         response = self.client.get(url)
+        self.assertEqual(self.user.intra_id, response.data[0]["intra_id"])
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
