@@ -16,11 +16,6 @@ class KeyboardInput(Enum):
     SPACE = "space"
 
 
-class Player(Enum):
-    PLAYER1 = "player1"
-    PLAYER2 = "player2"
-
-
 class GeneralGame:
     def __init__(self, player1: str, player2: str):
         self.player1: str = player1
@@ -31,12 +26,12 @@ class GeneralGame:
         self.score1: int = 0
         self.score2: int = 0
 
-    def reset_position(self):
+    def reset_position(self) -> None:
         self.paddle1.reset_position()
         self.paddle2.reset_position()
         self.ball.reset_position()
 
-    def update_position(self, text_data: json):
+    def update_position(self, text_data: json) -> None:
         data = json.load(text_data)
         if data["intra_id"] == self.player1:
             if data["keyboard_input"] == KeyboardInput.LEFT:
@@ -53,7 +48,9 @@ class GeneralGame:
             elif data["keyboard_input"] == KeyboardInput.SPACE:
                 self.paddle2.space()
 
-    def is_past_paddle(self, player: str):
-        if player == self.player1:
+    def is_past_paddle(self, intra_id: str) -> bool:
+        if intra_id == self.player1:
             return self.ball.position_z > self.paddle1.position_z + PADDLE_CORRECTION
-        return self.ball.position_z < self.paddle2.position_z - PADDLE_CORRECTION
+        elif intra_id == self.player2:
+            return self.ball.position_z < self.paddle2.position_z - PADDLE_CORRECTION
+        return False
