@@ -2,12 +2,7 @@ import json
 from enum import Enum
 from .Paddle import Paddle
 from .Ball import Ball
-
-FIELD_WIDTH: int = 1200
-FIELD_LENGTH: int = 3000
-PADDLE_WIDTH: int = 200
-PADDLE_HEIGHT: int = 30
-PADDLE_CORRECTION: int = 5
+from .GameSetValue import PADDLE_CORRECTION
 
 
 class KeyboardInput(Enum):
@@ -17,14 +12,30 @@ class KeyboardInput(Enum):
 
 
 class GeneralGame:
-    def __init__(self, player1: str, player2: str):
-        self.player1: str = player1
-        self.player2: str = player2
+    def __init__(self):
+        self.player1: str | None = None
+        self.player2: str | None = None
         self.paddle1: Paddle = Paddle()
         self.paddle2: Paddle = Paddle()
         self.ball: Ball = Ball()
         self.score1: int = 0
         self.score2: int = 0
+
+    def set_player(self, player_intra_id: str) -> None:
+        if self.player1 is None:
+            self.player1 = player_intra_id
+            return
+
+        if self.player2 is None:
+            self.player2 = player_intra_id
+            return
+
+    def get_player(self, player_id: int) -> str | None:
+        if player_id == 1:
+            return self.player1
+        elif player_id == 2:
+            return self.player2
+        return None
 
     def reset_position(self) -> None:
         self.paddle1.reset_position()

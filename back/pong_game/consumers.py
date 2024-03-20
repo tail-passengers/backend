@@ -1,9 +1,18 @@
 import json
 import uuid
+from enum import Enum
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from accounts.models import Users, UserStatusEnum
 from collections import deque
+from .module.Game import GeneralGame
+
+
+class MessageType(Enum):
+    READY = "ready"
+    START = "start"
+    PLAYING = "playing"
+    END = "end"
 
 
 class LoginConsumer(AsyncWebsocketConsumer):
@@ -50,12 +59,8 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
         game_id = str(uuid.uuid4())
         player1 = GeneralGameWaitConsumer.wait_list.popleft()
         player2 = GeneralGameWaitConsumer.wait_list.popleft()
-        await player1.send(
-            json.dumps({"game_id": game_id, "player1": player1.user.intra_id})
-        )
-        await player2.send(
-            json.dumps({"game_id": game_id, "player2": player2.user.intra_id})
-        )
+        await player1.send(json.dumps({"game_id": game_id}))
+        await player2.send(json.dumps({"game_id": game_id}))
         GeneralGameWaitConsumer.intra_id_list.remove(player1.user.intra_id)
         GeneralGameWaitConsumer.intra_id_list.remove(player2.user.intra_id)
 
@@ -67,7 +72,10 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
         return True
 
 
+# TODO url game_id 유효한지? 동일한지? 확인 로직 필요?
 class GeneralGameConsumer(AsyncWebsocketConsumer):
+    active_games = {}
+
     async def connect(self):
         self.user = self.scope["user"]
         if self.user.is_authenticated:
@@ -75,6 +83,48 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
             self.game_group_name = f"game_{self.game_id}"
             await self.channel_layer.group_add(self.game_group_name, self.channel_name)
             await self.accept()
+            if self.game_id not in GeneralGameConsumer.active_games.keys():
+                game = GeneralGame()
+                game.set_player(self.user.intra_id)
+                GeneralGameConsumer.active_games[self.game_id] = game
+                await self.send(
+                    json.dumps(
+                        {
+                            "message_type": MessageType.READY.value,
+                            "intra_id": self.user.intra_id,
+                            "number": "player1",
+                        }
+                    )
+                )
+            else:
+                GeneralGameConsumer.active_games[self.game_id].set_player(
+                    self.user.intra_id
+                )
+                await self.send(
+                    json.dumps(
+                        {
+                            "message_type": MessageType.READY.value,
+                            "intra_id": self.user.intra_id,
+                            "number": "player2",
+                        }
+                    )
+                )
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {
+                        "type": "game.message",
+                        "message": json.dumps(
+                            {
+                                "message_type": MessageType.START.value,
+                                "1p": GeneralGameConsumer.active_games[
+                                    self.game_id
+                                ].get_player(1),
+                                "2p": self.user.intra_id,
+                            }
+                        ),
+                    },
+                )
+
         else:
             await self.close()
 
@@ -84,6 +134,12 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
                 self.game_group_name, self.channel_name
             )
 
+    async def game_message(self, event):
+        message = event["message"]
+
+        # Send message to WebSocket
+        await self.send(text_data=message)
+
     async def receive(self, text_data):
-        # 게임 로직 추가 필요
+
         pass
