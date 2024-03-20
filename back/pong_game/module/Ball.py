@@ -1,4 +1,4 @@
-from .Game import FIELD_WIDTH
+from .GameSetValue import FIELD_WIDTH
 
 
 class Ball:

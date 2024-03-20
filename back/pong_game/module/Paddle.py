@@ -1,4 +1,4 @@
-from .Game import FIELD_LENGTH
+from .GameSetValue import FIELD_LENGTH
 
 
 class Paddle:
