@@ -1,3 +1,4 @@
+import json
 import uuid
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
@@ -46,11 +47,15 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
 
     @classmethod
     async def game_match(cls):
-        data = '{"game_id": ' + f'"{str(uuid.uuid4())}"' + "}"
+        game_id = str(uuid.uuid4())
         player1 = GeneralGameWaitConsumer.wait_list.popleft()
         player2 = GeneralGameWaitConsumer.wait_list.popleft()
-        await player1.send(data)
-        await player2.send(data)
+        await player1.send(
+            json.dumps({"game_id": game_id, "player1": player1.user.intra_id})
+        )
+        await player2.send(
+            json.dumps({"game_id": game_id, "player2": player2.user.intra_id})
+        )
         GeneralGameWaitConsumer.intra_id_list.remove(player1.user.intra_id)
         GeneralGameWaitConsumer.intra_id_list.remove(player2.user.intra_id)
 
