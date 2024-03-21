@@ -1,14 +1,7 @@
 import json
-from enum import Enum
 from .Paddle import Paddle
 from .Ball import Ball
-from .GameSetValue import PADDLE_CORRECTION
-
-
-class KeyboardInput(Enum):
-    LEFT = "left"
-    RIGHT = "right"
-    SPACE = "space"
+from .GameSetValue import PADDLE_CORRECTION, KeyboardInput
 
 
 class GeneralGame:
