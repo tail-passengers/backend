@@ -11,3 +11,11 @@ class KeyboardInput(Enum):
     LEFT = "left"
     RIGHT = "right"
     SPACE = "space"
+
+
+class PlayerStatus(Enum):
+    WAIT = "wait"
+    READY = "ready"
+    PLAYING = "playing"
+    WIN = "win"
+    LOSE = "lose"
