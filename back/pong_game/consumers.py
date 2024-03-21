@@ -16,25 +16,33 @@ class MessageType(Enum):
 
 
 class LoginConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.user: Users = None
+
     async def connect(self):
         self.user = self.scope["user"]
         if self.user.is_authenticated:
             await self.accept()
-            await self.update_user_status(self.user, UserStatusEnum.ONLINE)
+            await self.update_user_status(UserStatusEnum.ONLINE)
         else:
             await self.close()
 
     async def disconnect(self, close_code):
         if self.user.is_authenticated:
-            await self.update_user_status(self.user, UserStatusEnum.OFFLINE)
+            await self.update_user_status(UserStatusEnum.OFFLINE)
 
     @database_sync_to_async
-    def update_user_status(self, user, status):
-        Users.objects.filter(user_id=user.user_id).update(status=status)
+    def update_user_status(self, status):
+        Users.objects.filter(user_id=self.user.user_id).update(status=status)
 
 
 class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
     intra_id_list, wait_list = list(), deque()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.user: Users = None
 
     async def connect(self):
         self.user = self.scope["user"]
@@ -74,7 +82,13 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
 
 # TODO url game_id 유효한지? 동일한지? 확인 로직 필요?
 class GeneralGameConsumer(AsyncWebsocketConsumer):
-    active_games = {}
+    active_games: dict[str, GeneralGame] = {}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.user: Users = None
+        self.game_id: str | None = None
+        self.game_group_name: str | None = None
 
     async def connect(self):
         self.user = self.scope["user"]
@@ -140,6 +154,5 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
         # Send message to WebSocket
         await self.send(text_data=message)
 
-    async def receive(self, text_data):
-
-        pass
+    async def receive(self, text_data=None, bytes_data=None):
+        data = json.loads(text_data)
