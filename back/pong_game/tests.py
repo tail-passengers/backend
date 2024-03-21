@@ -151,15 +151,19 @@ class GeneralGameConsumerTests(TestCase):
         self.assertEqual(user2_response_dict["intra_id"], self.user2.intra_id)
         self.assertEqual(user2_response_dict["number"], "player2")
 
-        # 연결된 소켓에 start를 보내주는 지 확인
-        user1_response = await communicator1.receive_from()
-        user1_response_dict = json.loads(user1_response)
-        self.assertEqual(user1_response_dict["message_type"], "start")
-        self.assertEqual(user1_response_dict["1p"], self.user1.intra_id)
-        self.assertEqual(user1_response_dict["2p"], self.user2.intra_id)
+        # user1,2 응답
+        await communicator1.send_to(text_data=user1_response)
+        await communicator2.send_to(text_data=user2_response)
 
-        user2_response = await communicator2.receive_from()
-        user2_response_dict = json.loads(user2_response)
-        self.assertEqual(user2_response_dict["message_type"], "start")
-        self.assertEqual(user2_response_dict["1p"], self.user1.intra_id)
-        self.assertEqual(user2_response_dict["2p"], self.user2.intra_id)
+        # user1, user2 start 메시지 확인
+        user1_second_response = await communicator1.receive_from()
+        user1_second_dict = json.loads(user1_second_response)
+        self.assertEqual(user1_second_dict["message_type"], "start")
+        self.assertEqual(user1_second_dict["1p"], self.user1.intra_id)
+        self.assertEqual(user1_second_dict["2p"], self.user2.intra_id)
+
+        user2_second_response = await communicator2.receive_from()
+        user2_second_dict = json.loads(user2_second_response)
+        self.assertEqual(user2_second_dict["message_type"], "start")
+        self.assertEqual(user2_second_dict["1p"], self.user1.intra_id)
+        self.assertEqual(user2_second_dict["2p"], self.user2.intra_id)
