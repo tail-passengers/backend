@@ -123,22 +123,6 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
                         }
                     )
                 )
-                await self.channel_layer.group_send(
-                    self.game_group_name,
-                    {
-                        "type": "game.message",
-                        "message": json.dumps(
-                            {
-                                "message_type": MessageType.START.value,
-                                "1p": GeneralGameConsumer.active_games[
-                                    self.game_id
-                                ].get_player(1),
-                                "2p": self.user.intra_id,
-                            }
-                        ),
-                    },
-                )
-
         else:
             await self.close()
 
@@ -156,3 +140,22 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data=None, bytes_data=None):
         data = json.loads(text_data)
+        game = GeneralGameConsumer.active_games[self.game_id]
+        if data["message_type"] == MessageType.READY.value:
+            game.set_ready(data["number"])
+            if game.get_ready():
+                player1 = game.get_player(1).get_intra_id()
+                player2 = game.get_player(2).get_intra_id()
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {
+                        "type": "game.message",
+                        "message": json.dumps(
+                            {
+                                "message_type": MessageType.START.value,
+                                "1p": player1,
+                                "2p": player2,
+                            }
+                        ),
+                    },
+                )
