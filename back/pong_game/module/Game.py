@@ -46,8 +46,12 @@ class GeneralGame:
 
     def key_input(self, text_data: json) -> None:
         data = json.loads(text_data)
-        number = self.get_player(data["number"])
-        if number == "1":
-            self.player1.move_paddle(data["input"])
-        elif number == "2":
-            self.player2.move_paddle(data["input"])
+        if data["number"] == "player1":
+            self.player1.paddle_handler(data["input"])
+        elif data["number"] == "player2":
+            self.player2.paddle_handler(data["input"])
+
+    def move_paddle(self) -> tuple:
+        paddle1 = self.player1.get_paddle().move_handler()
+        paddle2 = self.player2.get_paddle().move_handler()
+        return paddle1, paddle2

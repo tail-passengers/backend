@@ -18,8 +18,11 @@ class Player:
     def get_status(self) -> PlayerStatus:
         return self.status
 
+    def get_paddle(self) -> Paddle:
+        return self.paddle
+
     def set_status(self, status: PlayerStatus) -> None:
         self.status = status
 
-    def move_paddle(self, key_input: str) -> None:
-        self.paddle.key_handler(key_input)
+    def paddle_handler(self, key_input: str) -> None:
+        self.paddle.input_handler(key_input)

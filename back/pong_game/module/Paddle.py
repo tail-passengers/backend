@@ -19,8 +19,11 @@ class Paddle:
         # TODO front 구현에 따라 필요할 수도 안 필요할 수도 있음
         # self.direction: int = 1 if number == 1 else -1
 
+    def get_position_x(self) -> float:
+        return self.position_x
+
     # TODO space 키는 프론트에서 처리 후, protego maxima 가 실행되었는지 판단하여 전달
-    def key_handler(self, key_input: str) -> None:
+    def input_handler(self, key_input: str) -> None:
         if key_input == KeyboardInput.LEFT_PRESS.value:
             self.left = True
         elif key_input == KeyboardInput.LEFT_RELEASE.value:
@@ -30,10 +33,13 @@ class Paddle:
         elif key_input == KeyboardInput.RIGHT_RELEASE.value:
             self.right = False
 
+    def move_handler(self) -> float:
         if self.left and not self.right:
             self._move(1)
         elif not self.left and self.right:
             self._move(-1)
+
+        return self.position_x
 
     def _move(self, direction: int) -> None:
         new_paddle_x = self.position_x + direction * PADDLE_SPEED
