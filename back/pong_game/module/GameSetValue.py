@@ -6,6 +6,9 @@ PADDLE_WIDTH: int = 200
 PADDLE_HEIGHT: int = 30
 PADDLE_SPEED: int = 30
 PADDLE_CORRECTION: int = 5
+BALL_SPEED_X: int = 20
+BALL_SPEED_Z: int = 20
+MAX_SCORE: int = 5
 
 
 class KeyboardInput(Enum):
@@ -20,5 +23,13 @@ class PlayerStatus(Enum):
     WAIT = "wait"
     READY = "ready"
     PLAYING = "playing"
-    WIN = "win"
-    LOSE = "lose"
+    SCORE = "score"
+    END = "end"
+
+
+class MessageType(Enum):
+    READY = "ready"
+    START = "start"
+    PLAYING = "playing"
+    SCORE = "score"
+    END = "end"
