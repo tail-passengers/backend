@@ -1,4 +1,4 @@
-from .GameSetValue import FIELD_WIDTH
+from .GameSetValue import FIELD_WIDTH, BALL_SPEED_X, BALL_SPEED_Z
 
 
 class Ball:
@@ -7,18 +7,18 @@ class Ball:
         self.position_y: float = 0
         self.position_z: float = 0
         self.radius: float = 20
-        self.speed_x: float = 0
-        self.speed_z: float = 0
+        self.speed_x: float = BALL_SPEED_X
+        self.speed_z: float = BALL_SPEED_Z
 
     def reset_position(self) -> None:
         self.position_x = 0
         self.position_y = 0
         self.position_z = 0
-        self.speed_x = 0
-        self.speed_z = 0
+        self.speed_x = BALL_SPEED_X
+        self.speed_z = BALL_SPEED_Z
 
-    def move(self) -> None:
-        # TODO 충돌 여부에 대한 로직도 프론트엔 있음
+    def update_ball_position(self) -> None:
+        # TODO wasTouchingPaddle 들어갈 위치
 
         self.position_x += self.speed_x
         self.position_z += self.speed_z
@@ -38,3 +38,9 @@ class Ball:
     def protego_maxima(self) -> None:
         self.radius += 5
         self.speed_z += 1
+
+    def get_position(self) -> tuple:
+        return self.position_x, self.position_y, self.position_z
+
+    def get_speed(self) -> tuple:
+        return self.speed_x, self.speed_z
