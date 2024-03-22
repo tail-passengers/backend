@@ -10,7 +10,7 @@
 
 ```json
 {
-    "game_id": {game_id}
+  "game_id": "{game_id}"
 }
 ```
 
@@ -27,8 +27,8 @@
 ```json
 {
   "message_type": "ready",
-  "intra_id": {intra_id},
-  "number": "player1" or "player2"
+  "intra_id": "{intra_id}",
+  "number": "{player1 / player2}"
 }
 ```
 
@@ -37,8 +37,8 @@
 ```json
 {
   "message_type": "ready",
-  "intra_id": {intra_id},
-  "number": "player1" or "player2"
+  "intra_id": "{intra_id}",
+  "number": "{player1 / player2}"
 }
 ```
 
@@ -49,9 +49,33 @@
 ```json
 {
   "message_type": "start",
-  "1p": {intra_id},
-  "2p": {intra_id}
+  "1p": "{intra_id}",
+  "2p": "{intra_id}"
 }
 ```
 
-### 5. 
+### 5. [Back] 클라이언트에게 현재 게임 상태 전송
+
+- 1초에 30번 전송
+- 이후, 공의 위치 등이 추가될 예정
+
+```json
+{
+  "message_type": "gaming",
+  "paddle1": "{paddle1_position_x}",
+  "paddle2": "{paddle2_position_x}"
+}
+```
+
+### 6. [Front] 키 입력 시, Back에게 전송
+
+- release는 뗀 것을 의미
+- press는 누른 것을 의미
+
+```json
+{
+  "message_type": "key",
+  "number": "{player1 / player2}",
+  "input": "{left_press / left_release / right_press / right_release / space}"
+}
+```
