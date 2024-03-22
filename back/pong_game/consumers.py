@@ -1,3 +1,4 @@
+import asyncio
 import json
 import uuid
 from enum import Enum
@@ -89,6 +90,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
         self.user: Users = None
         self.game_id: str | None = None
         self.game_group_name: str | None = None
+        self.game_loop_task: asyncio.Task | None = None
 
     async def connect(self):
         self.user = self.scope["user"]
@@ -126,6 +128,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
         else:
             await self.close()
 
+    # TODO 게임 종료 시 active_games에서 제거
     async def disconnect(self, close_code):
         if self.user.is_authenticated:
             await self.channel_layer.group_discard(
@@ -141,6 +144,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data=None, bytes_data=None):
         data = json.loads(text_data)
         game = GeneralGameConsumer.active_games[self.game_id]
+        # TODO 이미 playing인데 또 들어올 경우 예외 처리
         if data["message_type"] == MessageType.READY.value:
             game.set_ready(data["number"])
             if game.get_ready():
@@ -159,3 +163,27 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
                         ),
                     },
                 )
+                self.game_loop_task = asyncio.create_task(
+                    self.send_game_messages_loop()
+                )
+        elif data["message_type"] == MessageType.PLAYING.value:
+            game.key_input(text_data)
+
+    async def send_game_messages_loop(self):
+        while True:
+            await asyncio.sleep(1)  # 30 times per second
+            game = GeneralGameConsumer.active_games.get(self.game_id)
+            paddle1, paddle2 = game.move_paddle()
+            await self.channel_layer.group_send(
+                self.game_group_name,
+                {
+                    "type": "game.message",
+                    "message": json.dumps(
+                        {
+                            "message_type": MessageType.PLAYING.value,
+                            "paddle1": paddle1,
+                            "paddle2": paddle2,
+                        }
+                    ),
+                },
+            )
