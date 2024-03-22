@@ -1,19 +1,13 @@
 import asyncio
 import json
 import uuid
-from enum import Enum
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from accounts.models import Users, UserStatusEnum
 from collections import deque
 from .module.Game import GeneralGame
-
-
-class MessageType(Enum):
-    READY = "ready"
-    START = "start"
-    PLAYING = "playing"
-    END = "end"
+from .module.GameSetValue import MAX_SCORE, PlayerStatus
+from .module.GameSetValue import MessageType
 
 
 class LoginConsumer(AsyncWebsocketConsumer):
@@ -99,6 +93,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
             self.game_group_name = f"game_{self.game_id}"
             await self.channel_layer.group_add(self.game_group_name, self.channel_name)
             await self.accept()
+            # TODO 이미 playing인데 또 들어올 경우 예외 처리 -> game_status 추가해보기(wait, ready, playing)
             if self.game_id not in GeneralGameConsumer.active_games.keys():
                 game = GeneralGame()
                 game.set_player(self.user.intra_id)
@@ -128,7 +123,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
         else:
             await self.close()
 
-    # TODO 게임 종료 시 active_games에서 제거
+    # TODO 게임 종료 시 active_games에서 제거 및 self.game_loop_task 종료하기
     async def disconnect(self, close_code):
         if self.user.is_authenticated:
             await self.channel_layer.group_discard(
@@ -144,46 +139,57 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data=None, bytes_data=None):
         data = json.loads(text_data)
         game = GeneralGameConsumer.active_games[self.game_id]
-        # TODO 이미 playing인데 또 들어올 경우 예외 처리
-        if data["message_type"] == MessageType.READY.value:
+        # TODO 이미 playing인데 또 들어올 경우 예외 처리 -> game_status 추가해보기(wait, ready, playing)
+        if (
+            data["message_type"] == MessageType.READY.value
+            and game.get_status() == PlayerStatus.WAIT
+        ):
             game.set_ready(data["number"])
-            if game.get_ready():
-                player1 = game.get_player(1).get_intra_id()
-                player2 = game.get_player(2).get_intra_id()
+            if game.is_all_ready():
                 await self.channel_layer.group_send(
                     self.game_group_name,
                     {
                         "type": "game.message",
-                        "message": json.dumps(
-                            {
-                                "message_type": MessageType.START.value,
-                                "1p": player1,
-                                "2p": player2,
-                            }
-                        ),
+                        "message": game.build_start_json(),
                     },
                 )
+                game.set_status(PlayerStatus.PLAYING)
                 self.game_loop_task = asyncio.create_task(
-                    self.send_game_messages_loop()
+                    self.send_game_messages_loop(game)
                 )
-        elif data["message_type"] == MessageType.PLAYING.value:
+        elif (
+            data["message_type"] == MessageType.PLAYING.value
+            and game.get_status() == PlayerStatus.PLAYING
+        ):
             game.key_input(text_data)
+        elif (
+            data["message_type"] == MessageType.END.value
+            and game.get_status() == PlayerStatus.END
+        ):
+            # TODO DB 저장
+            pass
 
-    async def send_game_messages_loop(self):
+    # TODO game 매개변수로 잘 받아오는지
+    async def send_game_messages_loop(self, game: GeneralGame):
         while True:
-            await asyncio.sleep(1)  # 30 times per second
-            game = GeneralGameConsumer.active_games.get(self.game_id)
-            paddle1, paddle2 = game.move_paddle()
-            await self.channel_layer.group_send(
-                self.game_group_name,
-                {
-                    "type": "game.message",
-                    "message": json.dumps(
-                        {
-                            "message_type": MessageType.PLAYING.value,
-                            "paddle1": paddle1,
-                            "paddle2": paddle2,
-                        }
-                    ),
-                },
-            )
+            await asyncio.sleep(1 / 2)
+            # game = GeneralGameConsumer.active_games.get(self.game_id)
+            if game.get_status() == PlayerStatus.PLAYING:
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {"type": "game.message", "message": game.build_game_json()},
+                )
+            elif game.get_status() == PlayerStatus.SCORE:
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {"type": "game.message", "message": game.build_score_json()},
+                )
+                score1, score2 = game.get_score()
+                if score1 == MAX_SCORE or score2 == MAX_SCORE:
+                    await self.channel_layer.group_send(
+                        self.game_group_name,
+                        {"type": "game.message", "message": game.build_end_json()},
+                    )
+                    game.set_status(PlayerStatus.END)
+                    break
+                game.set_status(PlayerStatus.PLAYING)
