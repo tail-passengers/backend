@@ -63,7 +63,11 @@
 {
   "message_type": "gaming",
   "paddle1": "{paddle1_position_x}",
-  "paddle2": "{paddle2_position_x}"
+  "paddle2": "{paddle2_position_x}",
+  "ball_x": "{ball_position_x}",
+  "ball_z": "{ball_position_z}",
+  "ball_vx": "{ball_velocity_x}",
+  "ball_vz": "{ball_velocity_z}"
 }
 ```
 
@@ -76,6 +80,54 @@
 {
   "message_type": "key",
   "number": "{player1 / player2}",
-  "input": "{left_press / left_release / right_press / right_release / space}"
+  "input": "{left_press / left_release / right_press / right_release / space}",
 }
 ```
+
+### 7. [Back] 클라이언트에게 득점 시 전송
+
+```json
+{
+    "message_type": "score",
+    "player1_score": "{player1_score}",
+    "player2_score": "{player2_score}"
+}
+```
+
+### 8. [Back] 클라이언트에게 게임 종료 시 전송
+
+```json
+{
+    "message_type": "end",
+    "winner": "{player1 / player2}",
+    "loser": "{player1 / player2}"
+}
+```
+
+### 9. [Front] 게임 종료 메세지를 잘 받음
+
+```json
+{
+    "message_type": "end",
+    "winner": "{player1 / player2}",
+    "loser": "{player1 / player2}"
+}
+```
+
+### 10. [Back] DB 생성해서 저장
+
+
+## 예외 상황
+
+### 1. 연결이 끊긴 경우
+
+- 없던 게임으로 처리
+
+### 2. 게임 중간에 연결이 끊긴 경우
+
+- 바로 종료
+
+### 3. 아무 uuid를 가지고 접속 요청할 때
+
+- Back 로직에서 거부할 예정
+
