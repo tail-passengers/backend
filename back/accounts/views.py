@@ -220,3 +220,25 @@ class CallbackAPIView(APIView):
 def logout_view(request):
     logout(request)
     return redirect("/")
+
+
+# TODO test 용도 삭제 해야함
+class testAccountLogin(APIView):
+
+    def get(self, request, *args, **kwargs):
+        """
+        GET method override
+        """
+        if request.user.is_authenticated:
+            return redirect(
+                f"http://127.0.0.1:8000/api/v1/users/{request.user.intra_id}/"
+            )
+        try:
+            user_instance = Users.objects.get(intra_id=kwargs["intra_id"])
+            if user_instance.is_test_user:
+                login(request, user_instance)
+                return Response({"message": "로그인 성공."}, status=200)
+            else:
+                return Response({"error": "허용되지 않는 유저입니다."}, status=403)
+        except Users.DoesNotExist:
+            return Response({"error": "사용자를 찾을 수 없습니다."}, status=404)
