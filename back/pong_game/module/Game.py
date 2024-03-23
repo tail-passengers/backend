@@ -21,14 +21,11 @@ class GeneralGame:
         return False
 
     def _is_past_paddle1(self) -> bool:
-        return self.ball.position_z > abs(
-            self.player1.paddle.position_z + PADDLE_CORRECTION
-        )
+        return self.ball.position_z > self.player1.paddle.position_z + PADDLE_CORRECTION
+
 
     def _is_past_paddle2(self) -> bool:
-        return self.ball.position_z > abs(
-            self.player2.paddle.position_z + PADDLE_CORRECTION
-        )
+        return self.ball.position_z < self.player2.paddle.position_z - PADDLE_CORRECTION
 
     def _is_paddle1_collision(self) -> bool:
         return (
