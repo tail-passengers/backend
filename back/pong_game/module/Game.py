@@ -23,7 +23,6 @@ class GeneralGame:
     def _is_past_paddle1(self) -> bool:
         return self.ball.position_z > self.player1.paddle.position_z + PADDLE_CORRECTION
 
-
     def _is_past_paddle2(self) -> bool:
         return self.ball.position_z < self.player2.paddle.position_z - PADDLE_CORRECTION
 
@@ -42,7 +41,10 @@ class GeneralGame:
     def _is_ball_aligned_with_paddle(self, paddle_num: int) -> bool:
         half_paddle_width = PADDLE_WIDTH / 2
         paddle = self.player1.paddle if paddle_num == 1 else self.player2.paddle
-        return self.ball.position_x > paddle.position_x - half_paddle_width
+        return (
+            self.ball.position_x > paddle.position_x - half_paddle_width
+            and self.ball.position_x < paddle.position_x + half_paddle_width
+        )
 
     def _reset_position(self) -> None:
         self.ball.reset_position()
