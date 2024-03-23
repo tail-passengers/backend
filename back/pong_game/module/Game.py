@@ -38,7 +38,7 @@ class GeneralGame:
 
     def _is_paddle2_collision(self) -> bool:
         return (
-            self.ball.position_z + self.ball.radius >= self.player2.paddle.position_z
+            self.ball.position_z - self.ball.radius <= self.player2.paddle.position_z
             and self._is_ball_aligned_with_paddle(2)
         )
 
