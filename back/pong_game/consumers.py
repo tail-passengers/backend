@@ -1,30 +1,43 @@
+import asyncio
+import json
 import uuid
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from accounts.models import Users, UserStatusEnum
 from collections import deque
+from .module.Game import GeneralGame
+from .module.GameSetValue import MAX_SCORE, PlayerStatus
+from .module.GameSetValue import MessageType
 
 
 class LoginConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.user: Users = None
+
     async def connect(self):
         self.user = self.scope["user"]
         if self.user.is_authenticated:
             await self.accept()
-            await self.update_user_status(self.user, UserStatusEnum.ONLINE)
+            await self.update_user_status(UserStatusEnum.ONLINE)
         else:
             await self.close()
 
     async def disconnect(self, close_code):
         if self.user.is_authenticated:
-            await self.update_user_status(self.user, UserStatusEnum.OFFLINE)
+            await self.update_user_status(UserStatusEnum.OFFLINE)
 
     @database_sync_to_async
-    def update_user_status(self, user, status):
-        Users.objects.filter(user_id=user.user_id).update(status=status)
+    def update_user_status(self, status):
+        Users.objects.filter(user_id=self.user.user_id).update(status=status)
 
 
 class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
     intra_id_list, wait_list = list(), deque()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.user: Users = None
 
     async def connect(self):
         self.user = self.scope["user"]
@@ -46,11 +59,11 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
 
     @classmethod
     async def game_match(cls):
-        data = '{"game_id": ' + f'"{str(uuid.uuid4())}"' + "}"
+        game_id = str(uuid.uuid4())
         player1 = GeneralGameWaitConsumer.wait_list.popleft()
         player2 = GeneralGameWaitConsumer.wait_list.popleft()
-        await player1.send(data)
-        await player2.send(data)
+        await player1.send(json.dumps({"game_id": game_id}))
+        await player2.send(json.dumps({"game_id": game_id}))
         GeneralGameWaitConsumer.intra_id_list.remove(player1.user.intra_id)
         GeneralGameWaitConsumer.intra_id_list.remove(player2.user.intra_id)
 
@@ -62,7 +75,17 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
         return True
 
 
+# TODO url game_id 유효한지? 동일한지? 확인 로직 필요?
 class GeneralGameConsumer(AsyncWebsocketConsumer):
+    active_games: dict[str, GeneralGame] = {}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.user: Users = None
+        self.game_id: str | None = None
+        self.game_group_name: str | None = None
+        self.game_loop_task: asyncio.Task | None = None
+
     async def connect(self):
         self.user = self.scope["user"]
         if self.user.is_authenticated:
@@ -70,15 +93,103 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
             self.game_group_name = f"game_{self.game_id}"
             await self.channel_layer.group_add(self.game_group_name, self.channel_name)
             await self.accept()
+            # TODO 이미 playing인데 또 들어올 경우 예외 처리 -> game_status 추가해보기(wait, ready, playing)
+            if self.game_id not in GeneralGameConsumer.active_games.keys():
+                game = GeneralGame()
+                game.set_player(self.user.intra_id)
+                GeneralGameConsumer.active_games[self.game_id] = game
+                await self.send(
+                    json.dumps(
+                        {
+                            "message_type": MessageType.READY.value,
+                            "intra_id": self.user.intra_id,
+                            "number": "player1",
+                        }
+                    )
+                )
+            else:
+                GeneralGameConsumer.active_games[self.game_id].set_player(
+                    self.user.intra_id
+                )
+                await self.send(
+                    json.dumps(
+                        {
+                            "message_type": MessageType.READY.value,
+                            "intra_id": self.user.intra_id,
+                            "number": "player2",
+                        }
+                    )
+                )
         else:
             await self.close()
 
+    # TODO 게임 종료 시 active_games에서 제거 및 self.game_loop_task 종료하기
     async def disconnect(self, close_code):
         if self.user.is_authenticated:
             await self.channel_layer.group_discard(
                 self.game_group_name, self.channel_name
             )
 
-    async def receive(self, text_data):
-        # 게임 로직 추가 필요
-        pass
+    async def game_message(self, event):
+        message = event["message"]
+
+        # Send message to WebSocket
+        await self.send(text_data=message)
+
+    async def receive(self, text_data=None, bytes_data=None):
+        data = json.loads(text_data)
+        game = GeneralGameConsumer.active_games[self.game_id]
+        # TODO 이미 playing인데 또 들어올 경우 예외 처리 -> game_status 추가해보기(wait, ready, playing)
+        if (
+            data["message_type"] == MessageType.READY.value
+            and game.get_status() == PlayerStatus.WAIT
+        ):
+            game.set_ready(data["number"])
+            if game.is_all_ready():
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {
+                        "type": "game.message",
+                        "message": game.build_start_json(),
+                    },
+                )
+                game.set_status(PlayerStatus.PLAYING)
+                self.game_loop_task = asyncio.create_task(
+                    self.send_game_messages_loop(game)
+                )
+        elif (
+            data["message_type"] == MessageType.PLAYING.value
+            and game.get_status() == PlayerStatus.PLAYING
+        ):
+            game.key_input(text_data)
+        elif (
+            data["message_type"] == MessageType.END.value
+            and game.get_status() == PlayerStatus.END
+        ):
+            # TODO DB 저장
+            pass
+
+    # TODO game 매개변수로 잘 받아오는지
+    async def send_game_messages_loop(self, game: GeneralGame):
+        while True:
+            await asyncio.sleep(1 / 2)
+            # game = GeneralGameConsumer.active_games.get(self.game_id)
+            if game.get_status() == PlayerStatus.PLAYING:
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {"type": "game.message", "message": game.build_game_json()},
+                )
+            elif game.get_status() == PlayerStatus.SCORE:
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {"type": "game.message", "message": game.build_score_json()},
+                )
+                score1, score2 = game.get_score()
+                if score1 == MAX_SCORE or score2 == MAX_SCORE:
+                    await self.channel_layer.group_send(
+                        self.game_group_name,
+                        {"type": "game.message", "message": game.build_end_json()},
+                    )
+                    game.set_status(PlayerStatus.END)
+                    break
+                game.set_status(PlayerStatus.PLAYING)
