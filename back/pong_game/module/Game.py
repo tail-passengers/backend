@@ -42,8 +42,9 @@ class GeneralGame:
         half_paddle_width = PADDLE_WIDTH / 2
         paddle = self.player1.paddle if paddle_num == 1 else self.player2.paddle
         return (
-            self.ball.position_x > paddle.position_x - half_paddle_width
-            and self.ball.position_x < paddle.position_x + half_paddle_width
+            paddle.position_x - half_paddle_width
+            < self.ball.position_x
+            < paddle.position_x + half_paddle_width
         )
 
     def _reset_position(self) -> None:
