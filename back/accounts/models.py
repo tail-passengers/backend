@@ -41,6 +41,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     created_time = models.DateTimeField(auto_now_add=True, editable=False)
     updated_time = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=2, choices=UserStatusEnum.choices)
+    is_test_user = models.BooleanField(default=False)
 
     is_staff = models.BooleanField(
         default=False

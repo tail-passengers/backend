@@ -8,7 +8,7 @@ down:
 	docker-compose -f ./docker-compose.yml down
 
 test:
-	cd ./back/ && python manage.py test --settings=back.test_settings
+	cd ./back/ && python3 manage.py test --settings=back.test_settings
 
 re: down
 	docker-compose -f ./docker-compose.yml up --build --detach
