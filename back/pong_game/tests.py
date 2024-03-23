@@ -167,3 +167,7 @@ class GeneralGameConsumerTests(TestCase):
         self.assertEqual(user2_second_dict["message_type"], "start")
         self.assertEqual(user2_second_dict["1p"], self.user1.intra_id)
         self.assertEqual(user2_second_dict["2p"], self.user2.intra_id)
+
+        while True:
+            user1_second_response = await communicator1.receive_from()
+            print(user1_second_response)
