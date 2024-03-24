@@ -105,8 +105,8 @@ class GeneralGame:
         )
 
     def _move_paddle(self) -> None:
-        self.player1.get_paddle().move_handler()
-        self.player2.get_paddle().move_handler()
+        self.player1.get_paddle().move_handler(player_num=1)
+        self.player2.get_paddle().move_handler(player_num=2)
 
     def _move_ball(self) -> None:
         self.ball.update_ball_position()

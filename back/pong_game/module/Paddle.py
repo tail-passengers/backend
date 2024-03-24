@@ -33,11 +33,17 @@ class Paddle:
         elif key_input == KeyboardInput.RIGHT_RELEASE.value:
             self.right = False
 
-    def move_handler(self) -> None:
-        if self.left and not self.right:
-            self._move(-1)
-        elif not self.left and self.right:
-            self._move(1)
+    def move_handler(self, player_num: int) -> None:
+        if player_num is 1:
+            if self.left and not self.right:
+                self._move(-1)
+            elif not self.left and self.right:
+                self._move(1)
+        elif player_num is 2:
+            if self.left and not self.right:
+                self._move(1)
+            elif not self.left and self.right:
+                self._move(-1)
 
     def _move(self, direction: int) -> None:
         new_paddle_x = self.position_x + direction * PADDLE_SPEED
