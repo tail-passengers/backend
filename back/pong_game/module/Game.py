@@ -5,10 +5,10 @@ from .GameSetValue import PlayerStatus, PADDLE_CORRECTION, PADDLE_WIDTH, Message
 
 
 class GeneralGame:
-    def __init__(self):
+    def __init__(self, player1: Player, player2: Player):
         self.ball: Ball = Ball()
-        self.player1: Player | None = None
-        self.player2: Player | None = None
+        self.player1: Player = player1
+        self.player2: Player = player2
         self.score1: int = 0
         self.score2: int = 0
         self.status: PlayerStatus = PlayerStatus.WAIT
@@ -143,15 +143,6 @@ class GeneralGame:
 
     def get_ball_speed(self) -> tuple:
         return self.ball.speed_x, self.ball.speed_z
-
-    def set_player(self, player_intra_id: str) -> None:
-        if self.player1 is None:
-            self.player1 = Player(1, player_intra_id)
-            return
-
-        if self.player2 is None:
-            self.player2 = Player(2, player_intra_id)
-            return
 
     def set_ready(self, number: str) -> None:
         if number == "player1":
