@@ -1,7 +1,15 @@
 import json
+from datetime import datetime
+
 from .Player import Player
 from .Ball import Ball
-from .GameSetValue import PlayerStatus, PADDLE_CORRECTION, PADDLE_WIDTH, MessageType
+from .GameSetValue import (
+    PlayerStatus,
+    PADDLE_CORRECTION,
+    PADDLE_WIDTH,
+    MessageType,
+    GameTimeType,
+)
 
 
 class GeneralGame:
@@ -12,6 +20,8 @@ class GeneralGame:
         self.score1: int = 0
         self.score2: int = 0
         self.status: PlayerStatus = PlayerStatus.WAIT
+        self.start_time: datetime | None = None
+        self.end_time: datetime | None = None
 
     def is_all_ready(self) -> bool:
         if self.player1 is None or self.player2 is None:
@@ -143,6 +153,22 @@ class GeneralGame:
 
     def get_ball_speed(self) -> tuple:
         return self.ball.speed_x, self.ball.speed_z
+
+    def get_game_time(self, time_type: GameTimeType) -> datetime:
+        if time_type == GameTimeType.START.value:
+            return self.start_time
+        elif time_type == GameTimeType.END.value:
+            return self.end_time
+
+    def get_db_data(self):
+        return {
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "player1_intra_id": self.player1.intra_id,
+            "player2_intra_id": self.player2.intra_id,
+            "player1_score": self.score1,
+            "player2_score": self.score2,
+        }
 
     def set_player(self, player_intra_id: str) -> None:
         if self.player1 is None:
