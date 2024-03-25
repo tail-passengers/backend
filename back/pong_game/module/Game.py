@@ -57,6 +57,16 @@ class GeneralGame:
         elif data["number"] == "player2":
             self.player2.paddle_handler(data["input"])
 
+    @staticmethod
+    def build_ready_json(number: int, intra_id: str) -> json:
+        return json.dumps(
+            {
+                "message_type": MessageType.READY.value,
+                "number": "player1" if number == 1 else "player2",
+                "intra_id": intra_id,
+            }
+        )
+
     def build_start_json(self) -> json:
         return json.dumps(
             {
@@ -125,11 +135,11 @@ class GeneralGame:
         elif self._is_paddle2_collision():
             self.ball.hit_ball_back(self.player2.get_paddle().get_position_x())
 
-    def get_player(self, number: int) -> Player | None:
-        if number == 1:
-            return self.player1
-        elif number == 2:
-            return self.player2
+    def get_player(self, intra_id: str) -> tuple[Player, int] | None:
+        if self.player1.intra_id == intra_id:
+            return self.player1, 1
+        elif self.player2.intra_id == intra_id:
+            return self.player2, 2
         return None
 
     def get_status(self) -> PlayerStatus:
