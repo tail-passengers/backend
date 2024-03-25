@@ -112,9 +112,10 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         if self.user.is_authenticated:
-            self.game_loop_task.cancel()
-            await self.game_loop_task  # Task 종료까지 대기
-            ACTIVE_GAMES.pop(self.game_id)
+            if self.game_id in ACTIVE_GAMES.keys():
+                ACTIVE_GAMES.pop(self.game_id)
+                self.game_loop_task.cancel()
+                await self.game_loop_task  # Task 종료까지 대기
             await self.channel_layer.group_discard(
                 self.game_group_name, self.channel_name
             )
