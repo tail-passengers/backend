@@ -52,7 +52,9 @@ class GeneralGame:
 
     def key_input(self, text_data: json) -> None:
         data = json.loads(text_data)
-        if data["number"] == "player1":
+        if data["input"] == "protego_maxima":
+            self.ball.protego_maxima()
+        elif data["number"] == "player1":
             self.player1.paddle_handler(data["input"])
         elif data["number"] == "player2":
             self.player2.paddle_handler(data["input"])
