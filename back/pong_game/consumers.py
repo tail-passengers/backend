@@ -94,41 +94,19 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
         self.user = self.scope["user"]
         if self.user.is_authenticated:
             self.game_id = str(self.scope["url_route"]["kwargs"]["game_id"])
+            if (
+                self.game_id not in ACTIVE_GAMES.keys()
+                or ACTIVE_GAMES[self.game_id].get_status() != PlayerStatus.WAIT
+                or ACTIVE_GAMES[self.game_id].get_player(self.user.intra_id) is None
+            ):
+                await self.close()
+                return
+            game = ACTIVE_GAMES[self.game_id]
+            player, number = game.get_player(self.user.intra_id)
             self.game_group_name = f"game_{self.game_id}"
             await self.channel_layer.group_add(self.game_group_name, self.channel_name)
             await self.accept()
-            if self.game_id not in ACTIVE_GAMES.keys():  # 없는 게임일 때
-                await self.close()
-            elif (
-                ACTIVE_GAMES[self.game_id].get_status() != PlayerStatus.WAIT
-            ):  # 게임이 대기 중이 아닐 때
-                await self.close()
-            elif (
-                ACTIVE_GAMES[self.game_id].get_player(1).intra_id == self.user.intra_id
-            ):
-                await self.send(
-                    json.dumps(
-                        {
-                            "message_type": MessageType.READY.value,
-                            "intra_id": self.user.intra_id,
-                            "number": "player1",
-                        }
-                    )
-                )
-            elif (
-                ACTIVE_GAMES[self.game_id].get_player(2).intra_id == self.user.intra_id
-            ):
-                await self.send(
-                    json.dumps(
-                        {
-                            "message_type": MessageType.READY.value,
-                            "intra_id": self.user.intra_id,
-                            "number": "player2",
-                        }
-                    )
-                )
-            else:  # 이 게임을 배정 받은 유저가 아닐 때
-                await self.close()
+            await self.send(GeneralGame.build_ready_json(number, player.intra_id))
         else:
             await self.close()
 
