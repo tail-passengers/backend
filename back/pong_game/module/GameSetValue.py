@@ -8,6 +8,7 @@ PADDLE_SPEED: int = 30
 PADDLE_CORRECTION: int = 5
 BALL_SPEED_X: int = 0
 BALL_SPEED_Z: int = -10
+BALL_RADIUS: int = 20
 MAX_SCORE: int = 5
 
 
