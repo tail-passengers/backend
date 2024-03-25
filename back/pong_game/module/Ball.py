@@ -1,4 +1,4 @@
-from .GameSetValue import FIELD_WIDTH, BALL_SPEED_X, BALL_SPEED_Z
+from .GameSetValue import FIELD_WIDTH, BALL_SPEED_X, BALL_SPEED_Z, BALL_RADIUS
 
 
 class Ball:
@@ -6,7 +6,7 @@ class Ball:
         self.position_x: float = 0
         self.position_y: float = 0
         self.position_z: float = 0
-        self.radius: float = 20
+        self.radius: float = BALL_RADIUS
         self.speed_x: float = BALL_SPEED_X
         self.speed_z: float = BALL_SPEED_Z
 
@@ -36,8 +36,7 @@ class Ball:
         self.speed_z *= -1
 
     def protego_maxima(self) -> None:
-        self.radius += 5
-        self.speed_z += 1
+        self.speed_z += -4
 
     def get_position(self) -> tuple:
         return self.position_x, self.position_y, self.position_z
