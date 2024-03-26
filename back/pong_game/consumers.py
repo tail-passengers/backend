@@ -8,6 +8,9 @@ from collections import deque
 from .module.Game import GeneralGame
 from .module.GameSetValue import MAX_SCORE, PlayerStatus
 from .module.GameSetValue import MessageType
+from .module.Player import Player
+
+ACTIVE_GAMES: dict[str, GeneralGame] = {}
 
 
 class LoginConsumer(AsyncWebsocketConsumer):
@@ -66,6 +69,9 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
         await player2.send(json.dumps({"game_id": game_id}))
         GeneralGameWaitConsumer.intra_id_list.remove(player1.user.intra_id)
         GeneralGameWaitConsumer.intra_id_list.remove(player2.user.intra_id)
+        ACTIVE_GAMES[game_id] = GeneralGame(
+            Player(1, player1.user.intra_id), Player(2, player2.user.intra_id)
+        )
 
     async def add_wait_list(self):
         if self.user.intra_id in GeneralGameWaitConsumer.intra_id_list:
@@ -77,8 +83,6 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
 
 # TODO url game_id 유효한지? 동일한지? 확인 로직 필요?
 class GeneralGameConsumer(AsyncWebsocketConsumer):
-    active_games: dict[str, GeneralGame] = {}
-
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
         self.user: Users = None
@@ -89,43 +93,29 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.user = self.scope["user"]
         if self.user.is_authenticated:
-            self.game_id = self.scope["url_route"]["kwargs"]["game_id"]
+            self.game_id = str(self.scope["url_route"]["kwargs"]["game_id"])
+            if (
+                self.game_id not in ACTIVE_GAMES.keys()
+                or ACTIVE_GAMES[self.game_id].get_status() != PlayerStatus.WAIT
+                or ACTIVE_GAMES[self.game_id].get_player(self.user.intra_id) is None
+            ):
+                await self.close()
+                return
+            game = ACTIVE_GAMES[self.game_id]
+            player, number = game.get_player(self.user.intra_id)
             self.game_group_name = f"game_{self.game_id}"
             await self.channel_layer.group_add(self.game_group_name, self.channel_name)
             await self.accept()
-            # TODO 이미 playing인데 또 들어올 경우 예외 처리 -> game_status 추가해보기(wait, ready, playing)
-            if self.game_id not in GeneralGameConsumer.active_games.keys():
-                game = GeneralGame()
-                game.set_player(self.user.intra_id)
-                GeneralGameConsumer.active_games[self.game_id] = game
-                await self.send(
-                    json.dumps(
-                        {
-                            "message_type": MessageType.READY.value,
-                            "intra_id": self.user.intra_id,
-                            "number": "player1",
-                        }
-                    )
-                )
-            else:
-                GeneralGameConsumer.active_games[self.game_id].set_player(
-                    self.user.intra_id
-                )
-                await self.send(
-                    json.dumps(
-                        {
-                            "message_type": MessageType.READY.value,
-                            "intra_id": self.user.intra_id,
-                            "number": "player2",
-                        }
-                    )
-                )
+            await self.send(GeneralGame.build_ready_json(number, player.intra_id))
         else:
             await self.close()
 
-    # TODO 게임 종료 시 active_games에서 제거 및 self.game_loop_task 종료하기
     async def disconnect(self, close_code):
         if self.user.is_authenticated:
+            if self.game_id in ACTIVE_GAMES.keys():
+                ACTIVE_GAMES.pop(self.game_id)
+                self.game_loop_task.cancel()
+                await self.game_loop_task  # Task 종료까지 대기
             await self.channel_layer.group_discard(
                 self.game_group_name, self.channel_name
             )
@@ -138,8 +128,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data=None, bytes_data=None):
         data = json.loads(text_data)
-        game = GeneralGameConsumer.active_games[self.game_id]
-        # TODO 이미 playing인데 또 들어올 경우 예외 처리 -> game_status 추가해보기(wait, ready, playing)
+        game = ACTIVE_GAMES[self.game_id]
         if (
             data["message_type"] == MessageType.READY.value
             and game.get_status() == PlayerStatus.WAIT
@@ -169,11 +158,9 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
             # TODO DB 저장
             pass
 
-    # TODO game 매개변수로 잘 받아오는지
     async def send_game_messages_loop(self, game: GeneralGame):
         while True:
             await asyncio.sleep(1 / 2)
-            # game = GeneralGameConsumer.active_games.get(self.game_id)
             if game.get_status() == PlayerStatus.PLAYING:
                 await self.channel_layer.group_send(
                     self.game_group_name,

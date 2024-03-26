@@ -111,13 +111,42 @@ class GeneralGameConsumerTests(TestCase):
         # 테스트 사용자 삭제
         user.delete()
 
+    async def test_wrong_game_id(self):
+        """
+        game_id가 잘못된 경우 접속 실패
+        """
+        self.user1 = await self.create_test_user(intra_id="test1")
+        communicator1 = WebsocketCommunicator(
+            application, f"/ws/general_game/{uuid.uuid4()}/"
+        )
+        communicator1.scope["user"] = self.user1
+        connected, _ = await communicator1.connect()
+        self.assertFalse(connected)
+
     async def test_authenticated_user_connection(self):
         """
         두 명 접속시 message_type 잘 보내는지 확인
         """
-        self.user1 = await self.create_test_user(intra_id="test1")
-        self.user2 = await self.create_test_user(intra_id="test2")
-        self.game_id = str(uuid.uuid4())
+        self.user1 = await self.create_test_user(intra_id="test3")
+        self.user2 = await self.create_test_user(intra_id="test4")
+
+        # 대기방 입장 및 게임 id 생성
+        communicator1 = WebsocketCommunicator(application, "/ws/general_game/wait/")
+        communicator1.scope["user"] = self.user1
+        await communicator1.connect()
+
+        communicator2 = WebsocketCommunicator(application, "/ws/general_game/wait/")
+        communicator2.scope["user"] = self.user2
+        await communicator2.connect()
+
+        user_response = await communicator1.receive_from()
+        user_response_dict = json.loads(user_response)
+
+        await communicator1.disconnect()
+        await communicator2.disconnect()
+
+        # 게임방 입장
+        self.game_id = user_response_dict["game_id"]
         communicator1 = WebsocketCommunicator(
             application, f"/ws/general_game/{self.game_id}/"
         )
@@ -167,3 +196,6 @@ class GeneralGameConsumerTests(TestCase):
         self.assertEqual(user2_second_dict["message_type"], "start")
         self.assertEqual(user2_second_dict["1p"], self.user1.intra_id)
         self.assertEqual(user2_second_dict["2p"], self.user2.intra_id)
+
+        await communicator1.disconnect()
+        await communicator2.disconnect()
