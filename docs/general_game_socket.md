@@ -61,7 +61,7 @@
 
 ```json
 {
-  "message_type": "gaming",
+  "message_type": "playing",
   "paddle1": "{paddle1_position_x}",
   "paddle2": "{paddle2_position_x}",
   "ball_x": "{ball_position_x}",
@@ -131,7 +131,3 @@
   "message_type": "error"
 }
 ```
-
-## 논의 사항
-
-
