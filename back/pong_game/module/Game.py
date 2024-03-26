@@ -167,10 +167,16 @@ class GeneralGame:
         return self.ball.speed_x, self.ball.speed_z
 
     def get_game_time(self, time_type: GameTimeType) -> datetime:
-        if time_type == GameTimeType.START.value:
+        if time_type == GameTimeType.START_TIME.value:
             return self.start_time
-        elif time_type == GameTimeType.END.value:
+        elif time_type == GameTimeType.END_TIME.value:
             return self.end_time
+
+    def set_game_time(self, time_type: GameTimeType) -> None:
+        if time_type == GameTimeType.START_TIME.value:
+            self.start_time = datetime.now()
+        elif time_type == GameTimeType.END_TIME.value:
+            self.end_time = datetime.now()
 
     def get_db_data(self):
         return {
