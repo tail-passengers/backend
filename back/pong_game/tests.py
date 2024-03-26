@@ -74,30 +74,6 @@ class GeneralGameWaitConsumerTests(TestCase):
         # 테스트 사용자 삭제
         user.delete()
 
-    @database_sync_to_async
-    def get_general_game_data(self, player_num: int, player):
-        try:
-            if player_num == 1:
-                return GeneralGameLogs.objects.get(player1=player.user_id)
-            elif player_num == 2:
-                return GeneralGameLogs.objects.get(player2=player.user_id)
-        except GeneralGameLogs.DoesNotExist:
-            return None
-
-    # polling 형식으로 데이터 가져오기
-    async def wait_for_game_data(self, player_num: int, player, timeout=5):
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            try:
-                game_data = await self.get_general_game_data(
-                    player_num=player_num, player=player
-                )
-                if game_data:
-                    return game_data
-            except GeneralGameLogs.DoesNotExist:
-                await asyncio.sleep(0.2)
-        return None
-
     async def test_authenticated_user_connection(self):
         """
         2명 접속시 game_id, player1, 2 인트라 아이디 받는지 확인
@@ -139,6 +115,30 @@ class GeneralGameConsumerTests(TestCase):
     def delete_test_user(self, user):
         # 테스트 사용자 삭제
         user.delete()
+
+    @database_sync_to_async
+    def get_general_game_data(self, player_num: int, player):
+        try:
+            if player_num == 1:
+                return GeneralGameLogs.objects.get(player1=player.user_id)
+            elif player_num == 2:
+                return GeneralGameLogs.objects.get(player2=player.user_id)
+        except GeneralGameLogs.DoesNotExist:
+            return None
+
+    # polling 형식으로 데이터 가져오기
+    async def wait_for_game_data(self, player_num: int, player, timeout=5):
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            try:
+                game_data = await self.get_general_game_data(
+                    player_num=player_num, player=player
+                )
+                if game_data:
+                    return game_data
+            except GeneralGameLogs.DoesNotExist:
+                await asyncio.sleep(0.2)
+        return None
 
     async def test_wrong_game_id(self):
         """
@@ -261,13 +261,21 @@ class GeneralGameConsumerTests(TestCase):
 
         # 게임방 입장
         self.game_id = user_response_dict["game_id"]
-        print("in test:", self.game_id)
         communicator1 = WebsocketCommunicator(
             application, f"/ws/general_game/{self.game_id}/"
         )
+
+        communicator1.scope["user"] = self.user1
+        connected, _ = await communicator1.connect()
+        self.assertTrue(connected)
+
         communicator2 = WebsocketCommunicator(
             application, f"/ws/general_game/{self.game_id}/"
         )
+
+        communicator2.scope["user"] = self.user2
+        connected, _ = await communicator2.connect()
+        self.assertTrue(connected)
 
         await communicator1.send_to(
             text_data=json.dumps(
@@ -295,42 +303,37 @@ class GeneralGameConsumerTests(TestCase):
             )
         )
 
+        while True:
+            user1_response = await communicator1.receive_from()
+            user1_dict = json.loads(user1_response)
+            if user1_dict["message_type"] == "end":
+                break
+
+        # end 메세지를 consumer로 날림
+        await communicator1.send_to(
+            text_data=json.dumps(
+                {
+                    "message_type": "end",
+                }
+            )
+        )
         user1_response = await communicator1.receive_from()
         user1_dict = json.loads(user1_response)
-        print(user1_dict)
+        self.assertEqual(user1_dict["message_type"], MessageType.COMPLETE.value)
 
-        # while True:
-        #     user1_response = await communicator1.receive_from()
-        #     user1_dict = json.loads(user1_response)
-        #     print(user1_dict)
-        #     if user1_dict["message_type"] == "end":
-        #         break
-        #
-        # # end 메세지를 consumer로 날림
-        # await communicator1.send_to(
-        #     text_data=json.dumps(
-        #         {
-        #             "message_type": "end",
-        #         }
-        #     )
-        # )
-        # user1_response = await communicator1.receive_from()
-        # user1_dict = json.loads(user1_response)
-        # self.assertEqual(user1_dict["message_type"], MessageType.COMPLETE.value)
-        #
-        # # db 저장 될 때 까지 0.2초씩 기다림 timeout은 2초
-        # game_data_from_db = await self.wait_for_game_data(
-        #     player_num=1, player=self.user1, timeout=2
-        # )
-        #
-        # # 2초동안 못받아오면 실패
-        # if game_data_from_db is None:
-        #     self.assertTrue(False)
-        #
-        # self.assertEqual(game_data_from_db.player1_id, self.user1.user_id)
-        # self.assertEqual(game_data_from_db.player2_id, self.user2.user_id)
-        # self.assertEqual(game_data_from_db.player1_score, 0)
-        # self.assertEqual(game_data_from_db.player2_score, 5)
-        #
-        # await communicator1.disconnect()
-        # await communicator2.disconnect()
+        # db 저장 될 때 까지 0.2초씩 기다림 timeout은 2초
+        game_data_from_db = await self.wait_for_game_data(
+            player_num=1, player=self.user1, timeout=2
+        )
+
+        # 2초동안 못받아오면 실패
+        if game_data_from_db is None:
+            self.assertTrue(False)
+
+        self.assertEqual(game_data_from_db.player1_id, self.user1.user_id)
+        self.assertEqual(game_data_from_db.player2_id, self.user2.user_id)
+        self.assertEqual(game_data_from_db.player1_score, 0)
+        self.assertEqual(game_data_from_db.player2_score, 5)
+
+        await communicator1.disconnect()
+        await communicator2.disconnect()
