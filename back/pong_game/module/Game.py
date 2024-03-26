@@ -5,10 +5,10 @@ from .GameSetValue import PlayerStatus, PADDLE_CORRECTION, PADDLE_WIDTH, Message
 
 
 class GeneralGame:
-    def __init__(self):
+    def __init__(self, player1: Player, player2: Player):
         self.ball: Ball = Ball()
-        self.player1: Player | None = None
-        self.player2: Player | None = None
+        self.player1: Player = player1
+        self.player2: Player = player2
         self.score1: int = 0
         self.score2: int = 0
         self.status: PlayerStatus = PlayerStatus.WAIT
@@ -52,10 +52,22 @@ class GeneralGame:
 
     def key_input(self, text_data: json) -> None:
         data = json.loads(text_data)
-        if data["number"] == "player1":
+        if data["input"] == "protego_maxima":
+            self.ball.protego_maxima()
+        elif data["number"] == "player1":
             self.player1.paddle_handler(data["input"])
         elif data["number"] == "player2":
             self.player2.paddle_handler(data["input"])
+
+    @staticmethod
+    def build_ready_json(number: int, intra_id: str) -> json:
+        return json.dumps(
+            {
+                "message_type": MessageType.READY.value,
+                "number": "player1" if number == 1 else "player2",
+                "intra_id": intra_id,
+            }
+        )
 
     def build_start_json(self) -> json:
         return json.dumps(
@@ -125,11 +137,11 @@ class GeneralGame:
         elif self._is_paddle2_collision():
             self.ball.hit_ball_back(self.player2.get_paddle().get_position_x())
 
-    def get_player(self, number: int) -> Player | None:
-        if number == 1:
-            return self.player1
-        elif number == 2:
-            return self.player2
+    def get_player(self, intra_id: str) -> tuple[Player, int] | None:
+        if self.player1.intra_id == intra_id:
+            return self.player1, 1
+        elif self.player2.intra_id == intra_id:
+            return self.player2, 2
         return None
 
     def get_status(self) -> PlayerStatus:
@@ -143,15 +155,6 @@ class GeneralGame:
 
     def get_ball_speed(self) -> tuple:
         return self.ball.speed_x, self.ball.speed_z
-
-    def set_player(self, player_intra_id: str) -> None:
-        if self.player1 is None:
-            self.player1 = Player(1, player_intra_id)
-            return
-
-        if self.player2 is None:
-            self.player2 = Player(2, player_intra_id)
-            return
 
     def set_ready(self, number: str) -> None:
         if number == "player1":

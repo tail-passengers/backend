@@ -80,7 +80,7 @@
 {
   "message_type": "key",
   "number": "{player1 / player2}",
-  "input": "{left_press / left_release / right_press / right_release / space}",
+  "input": "{ left_press / left_release / right_press / right_release / protego_maxima }"
 }
 ```
 
@@ -114,20 +114,24 @@
 }
 ```
 
-### 10. [Back] DB 생성해서 저장
+### 10.[Back] DB 생성해서 저장
 
+- DB 저장 성공 시
 
-## 예외 상황
+```json
+{
+  "message_type": "complete"
+}
+```
 
-### 1. 연결이 끊긴 경우
+- DB 저장 실패 시
 
-- 없던 게임으로 처리
+```json
+{
+  "message_type": "error"
+}
+```
 
-### 2. 게임 중간에 연결이 끊긴 경우
+## 논의 사항
 
-- 바로 종료
-
-### 3. 아무 uuid를 가지고 접속 요청할 때
-
-- Back 로직에서 거부할 예정
 
