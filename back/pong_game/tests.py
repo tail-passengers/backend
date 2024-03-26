@@ -117,7 +117,7 @@ class GeneralGameConsumerTests(TestCase):
         user.delete()
 
     @database_sync_to_async
-    def get_general_game_data(self, player_num: int, player):
+    def test_get_general_game_data(self, player_num: int, player):
         try:
             if player_num == 1:
                 return GeneralGameLogs.objects.get(player1=player.user_id)
@@ -230,7 +230,7 @@ class GeneralGameConsumerTests(TestCase):
         await communicator1.disconnect()
         await communicator2.disconnect()
 
-    @patch("pong_game.module.GameSetValue.BALL_SPEED_Z", -500)
+    @patch("pong_game.module.GameSetValue.BALL_SPEED_Z", -300)
     async def test_save_game_data_to_db(self):
         """
         게임 종료시 db에 잘 저장하는지 확인
