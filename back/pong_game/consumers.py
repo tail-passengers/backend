@@ -117,7 +117,10 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
             if self.game_id in ACTIVE_GAMES.keys():
                 ACTIVE_GAMES.pop(self.game_id)
                 self.game_loop_task.cancel()
-                await self.game_loop_task  # Task 종료까지 대기
+                try:  # cancel() 동작이 끝날 때까지 대기
+                    await self.game_loop_task
+                except asyncio.CancelledError:
+                    pass  # task가 이미 취소된 경우
             await self.channel_layer.group_discard(
                 self.game_group_name, self.channel_name
             )
