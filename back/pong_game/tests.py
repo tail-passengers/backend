@@ -117,7 +117,7 @@ class GeneralGameConsumerTests(TestCase):
         user.delete()
 
     @database_sync_to_async
-    def test_get_general_game_data(self, player_num: int, player):
+    def get_general_game_data(self, player_num: int, player):
         try:
             if player_num == 1:
                 return GeneralGameLogs.objects.get(player1=player.user_id)
@@ -152,7 +152,7 @@ class GeneralGameConsumerTests(TestCase):
         connected, _ = await communicator1.connect()
         self.assertFalse(connected)
 
-    async def authenticated_user_connection(self):
+    async def test_authenticated_user_connection(self):
         """
         두 명 접속시 message_type 잘 보내는지 확인
         """
@@ -236,7 +236,6 @@ class GeneralGameConsumerTests(TestCase):
         게임 종료시 db에 잘 저장하는지 확인
         공 속도는 test 할때 50배로
         """
-
         self.user1 = await self.create_test_user(intra_id="test1")
         self.user2 = await self.create_test_user(intra_id="test2")
 
