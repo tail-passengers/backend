@@ -34,3 +34,10 @@ class MessageType(Enum):
     PLAYING = "playing"
     SCORE = "score"
     END = "end"
+    COMPLETE = "complete"
+    ERROR = "error"
+
+
+class GameTimeType(Enum):
+    START_TIME = "start_time"
+    END_TIME = "end_time"

@@ -6,8 +6,10 @@ from channels.db import database_sync_to_async
 from accounts.models import Users, UserStatusEnum
 from collections import deque
 from .module.Game import GeneralGame
-from .module.GameSetValue import MAX_SCORE, PlayerStatus
+from .module.GameSetValue import MAX_SCORE, PlayerStatus, GameTimeType
 from .module.GameSetValue import MessageType
+from games.serializers import GeneralGameLogsSerializer
+from rest_framework.exceptions import ValidationError
 from .module.Player import Player
 
 ACTIVE_GAMES: dict[str, GeneralGame] = {}
@@ -115,7 +117,10 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
             if self.game_id in ACTIVE_GAMES.keys():
                 ACTIVE_GAMES.pop(self.game_id)
                 self.game_loop_task.cancel()
-                await self.game_loop_task  # Task 종료까지 대기
+                try:  # cancel() 동작이 끝날 때까지 대기
+                    await self.game_loop_task
+                except asyncio.CancelledError:
+                    pass  # task가 이미 취소된 경우
             await self.channel_layer.group_discard(
                 self.game_group_name, self.channel_name
             )
@@ -143,6 +148,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
                     },
                 )
                 game.set_status(PlayerStatus.PLAYING)
+                game.set_game_time(GameTimeType.START_TIME.value)
                 self.game_loop_task = asyncio.create_task(
                     self.send_game_messages_loop(game)
                 )
@@ -155,12 +161,27 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
             data["message_type"] == MessageType.END.value
             and game.get_status() == PlayerStatus.END
         ):
-            # TODO DB 저장
-            pass
+            try:
+                await self.save_game_data_to_db(game.get_db_data())
+                await self.send(
+                    json.dumps(
+                        {
+                            "message_type": MessageType.COMPLETE.value,
+                        }
+                    )
+                )
+            except ValidationError:
+                await self.send(
+                    json.dumps(
+                        {
+                            "message_type": MessageType.ERROR.value,
+                        }
+                    )
+                )
 
     async def send_game_messages_loop(self, game: GeneralGame):
         while True:
-            await asyncio.sleep(1 / 2)
+            await asyncio.sleep(1 / 30)
             if game.get_status() == PlayerStatus.PLAYING:
                 await self.channel_layer.group_send(
                     self.game_group_name,
@@ -178,5 +199,13 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
                         {"type": "game.message", "message": game.build_end_json()},
                     )
                     game.set_status(PlayerStatus.END)
+                    game.set_game_time(GameTimeType.END_TIME.value)
                     break
                 game.set_status(PlayerStatus.PLAYING)
+
+    @database_sync_to_async
+    def save_game_data_to_db(self, game_data: dict) -> None:
+        serializer = GeneralGameLogsSerializer(data=game_data)
+        # raise_exception=True 에러 발생시 예외처리 해야함
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()

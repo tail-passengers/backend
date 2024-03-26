@@ -1,7 +1,15 @@
 import json
+from datetime import datetime
+
 from .Player import Player
 from .Ball import Ball
-from .GameSetValue import PlayerStatus, PADDLE_CORRECTION, PADDLE_WIDTH, MessageType
+from .GameSetValue import (
+    PlayerStatus,
+    PADDLE_CORRECTION,
+    PADDLE_WIDTH,
+    MessageType,
+    GameTimeType,
+)
 
 
 class GeneralGame:
@@ -12,6 +20,8 @@ class GeneralGame:
         self.score1: int = 0
         self.score2: int = 0
         self.status: PlayerStatus = PlayerStatus.WAIT
+        self.start_time: datetime | None = None
+        self.end_time: datetime | None = None
 
     def is_all_ready(self) -> bool:
         if self.player1 is None or self.player2 is None:
@@ -117,8 +127,8 @@ class GeneralGame:
         )
 
     def _move_paddle(self) -> None:
-        self.player1.get_paddle().move_handler()
-        self.player2.get_paddle().move_handler()
+        self.player1.get_paddle().move_handler(player_num=1)
+        self.player2.get_paddle().move_handler(player_num=2)
 
     def _move_ball(self) -> None:
         self.ball.update_ball_position()
@@ -155,6 +165,37 @@ class GeneralGame:
 
     def get_ball_speed(self) -> tuple:
         return self.ball.speed_x, self.ball.speed_z
+
+    def get_game_time(self, time_type: GameTimeType) -> datetime:
+        if time_type == GameTimeType.START_TIME.value:
+            return self.start_time
+        elif time_type == GameTimeType.END_TIME.value:
+            return self.end_time
+
+    def set_game_time(self, time_type: GameTimeType) -> None:
+        if time_type == GameTimeType.START_TIME.value:
+            self.start_time = datetime.now()
+        elif time_type == GameTimeType.END_TIME.value:
+            self.end_time = datetime.now()
+
+    def get_db_data(self):
+        return {
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "player1_intra_id": self.player1.intra_id,
+            "player2_intra_id": self.player2.intra_id,
+            "player1_score": self.score1,
+            "player2_score": self.score2,
+        }
+
+    def set_player(self, player_intra_id: str) -> None:
+        if self.player1 is None:
+            self.player1 = Player(1, player_intra_id)
+            return
+
+        if self.player2 is None:
+            self.player2 = Player(2, player_intra_id)
+            return
 
     def set_ready(self, number: str) -> None:
         if number == "player1":
