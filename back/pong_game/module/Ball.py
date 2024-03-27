@@ -1,5 +1,5 @@
 from . import GameSetValue
-from .GameSetValue import FIELD_WIDTH, BALL_SPEED_X, BALL_SPEED_Z, BALL_RADIUS
+from .GameSetValue import FIELD_WIDTH, BALL_SPEED_X, BALL_RADIUS
 
 
 class Ball:
@@ -20,8 +20,6 @@ class Ball:
         self.speed_z = GameSetValue.BALL_SPEED_Z
 
     def update_ball_position(self) -> None:
-        # TODO wasTouchingPaddle 들어갈 위치
-
         self.position_x += self.speed_x
         self.position_z += self.speed_z
         self.position_y = -((self.position_z - 1) * (self.position_z - 1) / 5000) + 435
