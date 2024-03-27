@@ -4,6 +4,7 @@ from .GameSetValue import (
     PADDLE_WIDTH,
     FIELD_LENGTH,
     KeyboardInput,
+    PADDLE_BOUNDARY,
 )
 
 
@@ -44,6 +45,6 @@ class Paddle:
     def _move(self, direction: int) -> None:
         new_paddle_x = self.position_x + direction * PADDLE_SPEED
         self.position_x = max(
-            -FIELD_WIDTH / 2 + PADDLE_WIDTH / 2,
-            min(FIELD_WIDTH / 2 - PADDLE_WIDTH / 2, new_paddle_x),
+            -PADDLE_BOUNDARY,
+            min(PADDLE_BOUNDARY, new_paddle_x),
         )
