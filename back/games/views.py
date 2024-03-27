@@ -1,5 +1,6 @@
 import uuid
 
+import requests
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError, DatabaseError
 from django.db.models import Q
@@ -20,7 +21,7 @@ from .models import (
 )
 
 
-def is_exist_user(key, value):
+def is_exist_user(key: str, value: str or uuid) -> Users or None:
     try:
         user = None
         if key == "intra_id":
@@ -33,7 +34,7 @@ def is_exist_user(key, value):
         return None
 
 
-def get_user_from_intra_id_or_user_id(ids):
+def get_user_from_intra_id_or_user_id(ids: str or uuid) -> Users or None:
     """
     intra_id 또는 user_id로 유저를 찾아 반환
     """
@@ -45,7 +46,7 @@ def get_user_from_intra_id_or_user_id(ids):
     return user
 
 
-def create_with_intra_id_convert_to_user_id(self, request):
+def create_with_intra_id_convert_to_user_id(self, request) -> Response:
     """
     intra_id를 user_id로 변환하여 Game Log를 생성
     """
@@ -69,12 +70,12 @@ def create_with_intra_id_convert_to_user_id(self, request):
 class GeneralGameLogsViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = GeneralGameLogs.objects.all()
-    serializer_class = GeneralGameLogsSerializer
+    serializer_class: GeneralGameLogsSerializer = GeneralGameLogsSerializer
     http_method_names = ["post"]
 
     # general game logs 생성 시 join general game 생성하는 오버라이딩 에러 발생
     # fk는 uuid가 아닌 인스턴스를 요구해서 생긴 에러인듯
-    def create(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs) -> Response:
         try:
             return create_with_intra_id_convert_to_user_id(self, request)
 
@@ -89,9 +90,9 @@ class GeneralGameLogsViewSet(viewsets.ModelViewSet):
 class GeneralGameLogsListViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = GeneralGameLogs.objects.all()
-    serializer_class = GeneralGameLogsListSerializer
+    serializer_class: GeneralGameLogsListSerializer = GeneralGameLogsListSerializer
 
-    def list(self, request, *args, **kwargs):
+    def list(self, request, *args, **kwargs) -> Response:
         if "intra_id" not in kwargs:
             return super().list(request, *args, **kwargs)
 
@@ -111,10 +112,10 @@ class GeneralGameLogsListViewSet(viewsets.ModelViewSet):
 class TournamentGameLogsViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = TournamentGameLogs.objects.all()
-    serializer_class = TournamentGameLogsSerializer
+    serializer_class: TournamentGameLogsSerializer = TournamentGameLogsSerializer
     http_method_names = ["post"]
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs) -> Response:
         try:
             return create_with_intra_id_convert_to_user_id(self, request)
 
@@ -129,9 +130,11 @@ class TournamentGameLogsViewSet(viewsets.ModelViewSet):
 class TournamentGameLogsListViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = TournamentGameLogs.objects.all()
-    serializer_class = TournamentGameLogsListSerializer
+    serializer_class: TournamentGameLogsListSerializer = (
+        TournamentGameLogsListSerializer
+    )
 
-    def list(self, request, *args, **kwargs):
+    def list(self, request, *args, **kwargs) -> Response:
         if "intra_id" not in kwargs and "name" not in kwargs:
             return super().list(request, *args, **kwargs)
 

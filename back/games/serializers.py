@@ -8,14 +8,16 @@ from accounts.serializers import UsersSerializer
 from accounts.models import Users
 
 
-def create_game_log(validated_data, is_general=True):
+def create_game_log(
+    validated_data: dict, is_general: bool = True
+) -> GeneralGameLogs or TournamentGameLogs:
     validated_data["player1"] = Users.objects.get(
         intra_id=validated_data["player1"]["intra_id"]
     )
     validated_data["player2"] = Users.objects.get(
         intra_id=validated_data["player2"]["intra_id"]
     )
-    game_log = (
+    game_log: GeneralGameLogs or TournamentGameLogs = (
         GeneralGameLogs.objects.create(**validated_data)
         if is_general
         else TournamentGameLogs.objects.create(**validated_data)
@@ -24,11 +26,11 @@ def create_game_log(validated_data, is_general=True):
 
 
 class GeneralGameLogsSerializer(serializers.ModelSerializer):
-    player1_intra_id = serializers.CharField(source="player1.intra_id")
-    player2_intra_id = serializers.CharField(source="player2.intra_id")
+    player1_intra_id: str = serializers.CharField(source="player1.intra_id")
+    player2_intra_id: str = serializers.CharField(source="player2.intra_id")
 
     class Meta:
-        model = GeneralGameLogs
+        model: GeneralGameLogs = GeneralGameLogs
         fields = (
             "game_id",
             "start_time",
@@ -39,14 +41,14 @@ class GeneralGameLogsSerializer(serializers.ModelSerializer):
             "player2_score",
         )
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict) -> GeneralGameLogs:
         return create_game_log(validated_data)
 
     # winner랑 loser가 동일하면 에러 발생
     # 데이터 유효성 검사는 1. model 수준에서 2. serializer에서 가능한데
     # 1. clean을 오버라이딩해서 Django의 폼 시스템이나 관리자 사이트에서 주로 유용
     # 2. api에서 유용
-    def validate(self, data):
+    def validate(self, data: dict) -> dict:
         if data["player1"] == data["player2"]:
             raise serializers.ValidationError("Winner and loser must be different.")
         # 시작 시간이 끝나는 시간보다 이전인지 확인
@@ -61,11 +63,11 @@ class GeneralGameLogsSerializer(serializers.ModelSerializer):
 
 
 class GeneralGameLogsListSerializer(serializers.ModelSerializer):
-    player1_user = UsersSerializer(source="player1")
-    player2_user = UsersSerializer(source="player2")
+    player1_user: Users = UsersSerializer(source="player1")
+    player2_user: Users = UsersSerializer(source="player2")
 
     class Meta:
-        model = GeneralGameLogs
+        model: GeneralGameLogs = GeneralGameLogs
         fields = (
             "game_id",
             "start_time",
@@ -76,16 +78,16 @@ class GeneralGameLogsListSerializer(serializers.ModelSerializer):
             "player2_score",
         )
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict) -> GeneralGameLogs:
         return create_game_log(validated_data)
 
 
 class TournamentGameLogsSerializer(serializers.ModelSerializer):
-    player1_intra_id = serializers.CharField(source="player1.intra_id")
-    player2_intra_id = serializers.CharField(source="player2.intra_id")
+    player1_intra_id: str = serializers.CharField(source="player1.intra_id")
+    player2_intra_id: str = serializers.CharField(source="player2.intra_id")
 
     class Meta:
-        model = TournamentGameLogs
+        model: TournamentGameLogs = TournamentGameLogs
         fields = (
             "tournament_name",
             "round",
@@ -98,10 +100,10 @@ class TournamentGameLogsSerializer(serializers.ModelSerializer):
             "is_final",
         )
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict) -> TournamentGameLogs:
         return create_game_log(validated_data, is_general=False)
 
-    def validate(self, data):
+    def validate(self, data: dict) -> dict:
         if data["player1"] == data["player2"]:
             raise serializers.ValidationError("Winner and loser must be different.")
         # 시작 시간이 끝나는 시간보다 이전인지 확인
@@ -119,11 +121,11 @@ class TournamentGameLogsSerializer(serializers.ModelSerializer):
 
 
 class TournamentGameLogsListSerializer(serializers.ModelSerializer):
-    player1_user = UsersSerializer(source="player1")
-    player2_user = UsersSerializer(source="player2")
+    player1_user: Users = UsersSerializer(source="player1")
+    player2_user: Users = UsersSerializer(source="player2")
 
     class Meta:
-        model = TournamentGameLogs
+        model: TournamentGameLogsSerializer = TournamentGameLogs
         fields = (
             "tournament_name",
             "round",
@@ -136,5 +138,5 @@ class TournamentGameLogsListSerializer(serializers.ModelSerializer):
             "is_final",
         )
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict) -> TournamentGameLogs:
         return create_game_log(validated_data, is_general=False)

@@ -147,7 +147,7 @@ class GeneralGame:
         elif self._is_paddle2_collision():
             self.ball.hit_ball_back(self.player2.get_paddle().get_position_x())
 
-    def get_player(self, intra_id: str) -> tuple[Player, int] | None:
+    def get_player(self, intra_id: str) -> tuple[Player, int] or None:
         if self.player1.intra_id == intra_id:
             return self.player1, 1
         elif self.player2.intra_id == intra_id:
@@ -178,7 +178,7 @@ class GeneralGame:
         elif time_type == GameTimeType.END_TIME.value:
             self.end_time = datetime.now()
 
-    def get_db_data(self):
+    def get_db_data(self) -> dict:
         return {
             "start_time": self.start_time,
             "end_time": self.end_time,

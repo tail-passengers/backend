@@ -19,14 +19,14 @@ from django.contrib.auth import logout
 class UsersViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Users.objects.all()
-    serializer_class = UsersSerializer
+    serializer_class: UsersSerializer = UsersSerializer
     http_method_names = ["get", "post"]  # TODO debug를 위해 post 임시 추가
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs) -> Response:
         """
         디버그용 post
         """
-        intra_id = request.data.get("intra_id")
+        intra_id: str | None = request.data.get("intra_id")
         if not intra_id:
             return Response(
                 {"error": "intra_id is required"}, status=status.HTTP_400_BAD_REQUEST
@@ -49,10 +49,10 @@ class UsersViewSet(viewsets.ModelViewSet):
 class MeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Users.objects.all()
-    serializer_class = UsersDetailSerializer
+    serializer_class: UsersDetailSerializer = UsersDetailSerializer
     http_method_names = ["get"]
 
-    def list(self, request, *args, **kwargs):
+    def list(self, request, *args, **kwargs) -> Response:
         """
         GET method override
         """
@@ -64,12 +64,16 @@ class MeViewSet(viewsets.ModelViewSet):
 class UsersDetailViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Users.objects.all()
-    serializer_class = UsersDetailSerializer
-    http_method_names = ["get", "patch", "delete"]  # TODO delete 나중에 제거 예정
-    lookup_field = "intra_id"
+    serializer_class: UsersDetailSerializer = UsersDetailSerializer
+    http_method_names = [
+        "get",
+        "patch",
+        "delete",
+    ]  # TODO delete 나중에 제거 예정
+    lookup_field: str = "intra_id"
 
     # 우선 nickname과 profile_image를 제외한 모든 필드를 수정 불가로 설정
-    can_not_change_fields = (
+    can_not_change_fields: tuple[str] = (
         "user_id",
         "password",
         "last_login",
@@ -86,7 +90,7 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
         "user_permissions",
     )
 
-    def list(self, request, *args, **kwargs):
+    def list(self, request, *args, **kwargs) -> Response:
         """
         GET method override
         """
@@ -96,7 +100,7 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
         serializer = UsersDetailSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs) -> Response:
         """
         DELETE method override
         """
@@ -113,7 +117,7 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
         self.perform_destroy(user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def partial_update(self, request, *args, **kwargs):
+    def partial_update(self, request, *args, **kwargs) -> Response:
         """
         PATCH method override
         """
@@ -143,7 +147,7 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
 
 
 class Login42APIView(APIView):
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs) -> redirect:
         if request.user.is_authenticated:
             return redirect(
                 f"http://127.0.0.1:8000/api/v1/users/{request.user.intra_id}/"
@@ -161,7 +165,7 @@ class Login42APIView(APIView):
 
 # https://soyoung-new-challenge.tistory.com/92
 class CallbackAPIView(APIView):
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs) -> redirect:
         if request.user.is_authenticated:
             return redirect(
                 f"http://127.0.0.1:8000/api/v1/users/{request.user.intra_id}/"
@@ -197,7 +201,7 @@ class CallbackAPIView(APIView):
         login(request, user_instance)
         return redirect(f"http://127.0.0.1:8000/api/v1/users/{user_instance.intra_id}/")
 
-    def _get_access_token(self, request):
+    def _get_access_token(self, request) -> str:
         grant_type = "authorization_code"
         client_id = os.environ.get("CLIENT_ID")
         client_secret = os.environ.get("CLIENT_SECRET")
@@ -217,15 +221,15 @@ class CallbackAPIView(APIView):
         return token_response_json.get("access_token")
 
 
-def logout_view(request):
+def logout_view(request) -> redirect:
     logout(request)
     return redirect("/")
 
 
 # TODO test 용도 삭제 해야함
-class testAccountLogin(APIView):
+class TestAccountLogin(APIView):
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs) -> redirect or Response:
         """
         GET method override
         """
