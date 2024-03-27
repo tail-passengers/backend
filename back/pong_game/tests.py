@@ -402,7 +402,7 @@ class GeneralGameConsumerTests(TestCase):
 
         communicator1, communicator2 = await self.setup_game_environment_before_start()
 
-        # 왼쪽으로 player1 패들을 이동
+        # 오른쪽으로 player1 패들을 이동
         await communicator1.send_to(
             text_data=json.dumps(
                 {
@@ -413,7 +413,7 @@ class GeneralGameConsumerTests(TestCase):
             )
         )
 
-        # 왼쪽으로 player2 패들을 이동
+        # 오른쪽으로 player2 패들을 이동
         await communicator2.send_to(
             text_data=json.dumps(
                 {
