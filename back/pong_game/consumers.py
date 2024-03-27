@@ -7,13 +7,21 @@ from channels.db import database_sync_to_async
 from accounts.models import Users, UserStatusEnum
 from collections import deque
 from .module.Game import GeneralGame
-from .module.GameSetValue import MAX_SCORE, PlayerStatus, GameTimeType
+from .module.GameSetValue import (
+    MAX_SCORE,
+    PlayerStatus,
+    GameTimeType,
+    ResultType,
+    NOT_ALLOWED_TOURNAMENT_NAME,
+)
 from .module.GameSetValue import MessageType
 from games.serializers import GeneralGameLogsSerializer
 from rest_framework.exceptions import ValidationError
 from .module.Player import Player
+from .module.Tournament import Tournament
 
 ACTIVE_GENERAL_GAMES: dict[str, GeneralGame] = {}
+ACTIVE_TOURNAMENTS: dict[str, Tournament] = {}
 
 
 class LoginConsumer(AsyncWebsocketConsumer):
@@ -211,3 +219,45 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
         # raise_exception=True 에러 발생시 예외처리 해야함
         if serializer.is_valid(raise_exception=True):
             serializer.save()
+
+
+class TournamentGameWaitConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.user: Users or None = None
+
+    async def connect(self) -> None:
+        self.user = self.scope["user"]
+        if self.user.is_authenticated:
+            await self.accept()
+            await self.send(
+                json.dumps(
+                    {
+                        "game_list": [
+                            t.build_tournament_wait_dict()
+                            for t in ACTIVE_TOURNAMENTS.values()
+                        ]
+                    }
+                )
+            )
+        else:
+            await self.close()
+
+    async def receive(self, text_data: json = None, bytes_data=None) -> None:
+        data = json.loads(text_data)
+        if data.get(key="message_type") != MessageType.CREATE.value:
+            return
+
+        tournament_name = data.get(key="tournament_name")
+        if tournament_name is None:
+            result = ResultType.FAIL.value
+        elif tournament_name == NOT_ALLOWED_TOURNAMENT_NAME:
+            result = ResultType.FAIL.value
+        elif tournament_name in ACTIVE_TOURNAMENTS.keys():
+            result = ResultType.FAIL.value
+        else:
+            result = ResultType.SUCCESS.value
+
+        await self.send(
+            json.dumps({"message_type": MessageType.CREATE.value, "result": result})
+        )
