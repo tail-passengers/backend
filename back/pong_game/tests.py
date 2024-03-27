@@ -140,6 +140,76 @@ class GeneralGameConsumerTests(TestCase):
                 await asyncio.sleep(0.2)
         return None
 
+    async def setup_game_environment_before_start(self) -> tuple:
+        """
+        start 전까지 환경 세팅
+        """
+
+        self.user1 = await self.create_test_user(intra_id="test1")
+        self.user2 = await self.create_test_user(intra_id="test2")
+        # 대기방 입장 및 게임 id 생성
+        communicator1 = WebsocketCommunicator(application, "/ws/general_game/wait/")
+        communicator1.scope["user"] = self.user1
+        # 접속 확인
+        connected, _ = await communicator1.connect()
+        self.assertTrue(connected)
+
+        communicator2 = WebsocketCommunicator(application, "/ws/general_game/wait/")
+        communicator2.scope["user"] = self.user2
+        # 접속 확인
+        connected, _ = await communicator2.connect()
+        self.assertTrue(connected)
+
+        user_response = await communicator1.receive_from()
+        user_response_dict = json.loads(user_response)
+
+        await communicator1.disconnect()
+        await communicator2.disconnect()
+
+        # 게임방 입장
+        self.game_id = user_response_dict["game_id"]
+        communicator3 = WebsocketCommunicator(
+            application, f"/ws/general_game/{self.game_id}/"
+        )
+
+        communicator3.scope["user"] = self.user1
+        connected, _ = await communicator3.connect()
+        self.assertTrue(connected)
+
+        communicator4 = WebsocketCommunicator(
+            application, f"/ws/general_game/{self.game_id}/"
+        )
+
+        communicator4.scope["user"] = self.user2
+        connected, _ = await communicator4.connect()
+        self.assertTrue(connected)
+
+        await communicator3.send_to(
+            text_data=json.dumps(
+                {
+                    "message_type": "ready",
+                    "intra_id": "test1",
+                    "number": "player1",
+                }
+            )
+        )
+
+        await communicator4.send_to(
+            text_data=json.dumps(
+                {
+                    "message_type": "ready",
+                    "intra_id": "test2",
+                    "number": "player2",
+                }
+            )
+        )
+
+        # ready 제거
+        tmp = await communicator3.receive_from()
+        tmp = await communicator3.receive_from()
+
+        return communicator3, communicator4
+
     async def test_wrong_game_id(self):
         """
         game_id가 잘못된 경우 접속 실패
@@ -236,64 +306,7 @@ class GeneralGameConsumerTests(TestCase):
         게임 종료시 db에 잘 저장하는지 확인
         공 속도는 test 할때 50배로
         """
-        self.user1 = await self.create_test_user(intra_id="test1")
-        self.user2 = await self.create_test_user(intra_id="test2")
-
-        # 대기방 입장 및 게임 id 생성
-        communicator1 = WebsocketCommunicator(application, "/ws/general_game/wait/")
-        communicator1.scope["user"] = self.user1
-        # 접속 확인
-        connected, _ = await communicator1.connect()
-        self.assertTrue(connected)
-
-        communicator2 = WebsocketCommunicator(application, "/ws/general_game/wait/")
-        communicator2.scope["user"] = self.user2
-        # 접속 확인
-        connected, _ = await communicator2.connect()
-        self.assertTrue(connected)
-
-        user_response = await communicator1.receive_from()
-        user_response_dict = json.loads(user_response)
-
-        await communicator1.disconnect()
-        await communicator2.disconnect()
-
-        # 게임방 입장
-        self.game_id = user_response_dict["game_id"]
-        communicator1 = WebsocketCommunicator(
-            application, f"/ws/general_game/{self.game_id}/"
-        )
-
-        communicator1.scope["user"] = self.user1
-        connected, _ = await communicator1.connect()
-        self.assertTrue(connected)
-
-        communicator2 = WebsocketCommunicator(
-            application, f"/ws/general_game/{self.game_id}/"
-        )
-
-        communicator2.scope["user"] = self.user2
-        connected, _ = await communicator2.connect()
-        self.assertTrue(connected)
-
-        await communicator1.send_to(
-            text_data=json.dumps(
-                {
-                    "message_type": "ready",
-                    "intra_id": "test1",
-                    "number": "player1",
-                }
-            )
-        )
-        await communicator2.send_to(
-            text_data=json.dumps(
-                {
-                    "message_type": "ready",
-                    "intra_id": "test2",
-                    "number": "player2",
-                }
-            )
-        )
+        communicator1, communicator2 = await self.setup_game_environment_before_start()
 
         # 왼쪽으로 player1 패들을 이동
         await communicator1.send_to(
@@ -333,6 +346,94 @@ class GeneralGameConsumerTests(TestCase):
         self.assertEqual(game_data_from_db.player2_id, self.user2.user_id)
         self.assertEqual(game_data_from_db.player1_score, 0)
         self.assertEqual(game_data_from_db.player2_score, 5)
+
+        await communicator1.disconnect()
+        await communicator2.disconnect()
+
+    @patch("pong_game.module.GameSetValue.BALL_SPEED_Z", -300)
+    async def test_move_paddle_logic_1(self):
+        """
+        패들 움직임을 제대로 작동하는지 테스트
+        1. 1p 왼쪽 이동시 패들이 -인지
+        2. 2p 오른쪽 이동시 패들의 x방향이 +인지
+        3. 공이 시작시 -로 날라가는지(나중에 변경 될 수도 있음)
+        4. 1p를 왼쪽으로 움직인 상태로 고정 했을때 1p 패들과 공이 충돌하지 않는지
+        """
+
+        communicator1, communicator2 = await self.setup_game_environment_before_start()
+
+        # 왼쪽으로 player1 패들을 이동
+        await communicator1.send_to(
+            text_data=json.dumps(
+                {"message_type": "playing", "number": "player1", "input": "left_press"}
+            )
+        )
+
+        # 왼쪽으로 player2 패들을 이동
+        await communicator2.send_to(
+            text_data=json.dumps(
+                {"message_type": "playing", "number": "player2", "input": "left_press"}
+            )
+        )
+
+        while True:
+            user1_response = await communicator1.receive_from()
+            user1_dict = json.loads(user1_response)
+
+            if user1_dict["message_type"] == "playing":
+                # 1. 1p 왼쪽 이동시 1p 패들이 - 인지
+                self.assertTrue(user1_dict["paddle1"] < 0)
+                # 2. 2p 왼쪽 이동시 2p 패들이 + 인지
+                self.assertTrue(user1_dict["paddle2"] > 0)
+                # 3. 볼이 시작시 -로 이동하는지, 4. 1p와 충돌 안 하는지(충돌하면 ball_vz의 음수에서 양수가 됨)
+                self.assertTrue(user1_dict["ball_vz"] < 0)
+            if user1_dict["message_type"] == "end":
+                break
+
+        await communicator1.disconnect()
+        await communicator2.disconnect()
+
+    @patch("pong_game.module.GameSetValue.BALL_SPEED_Z", -300)
+    async def test_move_paddle_logic_2(self):
+        """
+        1. 1p 오른쪽 이동시 패들이 x방향이 +인지
+        2. 2p 왼쪽 이동시 패들의 x방향이 -인지
+        """
+
+        communicator1, communicator2 = await self.setup_game_environment_before_start()
+
+        # 오른쪽으로 player1 패들을 이동
+        await communicator1.send_to(
+            text_data=json.dumps(
+                {
+                    "message_type": "playing",
+                    "number": "player1",
+                    "input": "right_press",
+                }
+            )
+        )
+
+        # 오른쪽으로 player2 패들을 이동
+        await communicator2.send_to(
+            text_data=json.dumps(
+                {
+                    "message_type": "playing",
+                    "number": "player2",
+                    "input": "right_press",
+                }
+            )
+        )
+
+        while True:
+            user1_response = await communicator1.receive_from()
+            user1_dict = json.loads(user1_response)
+            if user1_dict["message_type"] == "playing":
+                # 1. 1p 왼쪽 이동시 1p 패들이 - 인지
+                self.assertTrue(user1_dict["paddle1"] > 0)
+                # 2. 2p 왼쪽 이동시 2p 패들이 + 인지
+                self.assertTrue(user1_dict["paddle2"] < 0)
+            if user1_dict["message_type"] == "end":
+                break
 
         await communicator1.disconnect()
         await communicator2.disconnect()
