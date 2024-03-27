@@ -4,8 +4,8 @@ from .models import Users
 
 class UsersSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Users
-        fields = (
+        model: Users = Users
+        fields: tuple = (
             "user_id",
             "intra_id",
             "nickname",
@@ -18,8 +18,8 @@ class UsersSerializer(serializers.ModelSerializer):
 
 class UsersDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Users
-        fields = (
+        model: Users = Users
+        fields: tuple = (
             "user_id",
             "nickname",
             "profile_image",

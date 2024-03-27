@@ -5,13 +5,13 @@ from .models import FriendRequests
 
 
 class FriendListSerializer(serializers.ModelSerializer):
-    friend_request = UsersSerializer(read_only=True)
-    request_intra_id = serializers.CharField(source="request_user_id.intra_id")
-    response_intra_id = serializers.CharField(source="response_user_id.intra_id")
+    friend_request: UsersSerializer = UsersSerializer(read_only=True)
+    request_intra_id: str = serializers.CharField(source="request_user_id.intra_id")
+    response_intra_id: str = serializers.CharField(source="response_user_id.intra_id")
 
     class Meta:
-        model = FriendRequests
-        fields = (
+        model: FriendRequests = FriendRequests
+        fields: tuple[str] = (
             "request_id",
             "request_intra_id",
             "response_intra_id",
@@ -21,11 +21,11 @@ class FriendListSerializer(serializers.ModelSerializer):
 
 
 class FriendRequestSerializer(serializers.ModelSerializer):
-    friend_request = UsersSerializer(read_only=True)
+    friend_request: UsersSerializer = UsersSerializer(read_only=True)
 
     class Meta:
-        model = FriendRequests
-        fields = (
+        model: FriendRequests = FriendRequests
+        fields: tuple[str] = (
             "request_id",
             "request_user_id",
             "response_user_id",
@@ -34,11 +34,11 @@ class FriendRequestSerializer(serializers.ModelSerializer):
 
 
 class FriendRequestDetailSerializer(serializers.ModelSerializer):
-    friend_request = UsersSerializer(read_only=True)
+    friend_request: UsersSerializer = UsersSerializer(read_only=True)
 
     class Meta:
-        model = FriendRequests
-        fields = (
+        model: FriendRequests = FriendRequests
+        fields: tuple[str] = (
             "status",
             "friend_request",
         )

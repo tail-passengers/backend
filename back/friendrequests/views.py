@@ -15,11 +15,11 @@ from accounts.views import UsersViewSet
 class FriendListViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = FriendRequests.objects.all()
-    serializer_class = FriendListSerializer
+    serializer_class: FriendListSerializer = FriendListSerializer
     http_method_names = ["get"]
     lookup_field = "intra_id"
 
-    def list(self, request, *args, **kwargs):
+    def list(self, request, *args, **kwargs) -> Response:
         intra_id = kwargs["intra_id"]
         if "status" not in kwargs:
             raise ValidationError({"detail": "잘못된 url입니다."})
@@ -54,10 +54,10 @@ class FriendListViewSet(viewsets.ModelViewSet):
 class FriendRequestViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = FriendRequests.objects.all()
-    serializer_class = FriendRequestSerializer
+    serializer_class: FriendRequestSerializer = FriendRequestSerializer
     http_method_names = ["post"]
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs) -> Response:
         request_user_intra_id = request.data.get("request_user_id")
         response_user_intra_id = request.data.get("response_user_id")
 
@@ -103,11 +103,11 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
 class FriendRequestDetailViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = FriendRequests.objects.all()
-    serializer_class = FriendRequestDetailSerializer
+    serializer_class: FriendRequestDetailSerializer = FriendRequestDetailSerializer
     http_method_names = ["patch", "delete"]
     lookup_field = "request_id"
 
-    def partial_update(self, request, *args, **kwargs):
+    def partial_update(self, request, *args, **kwargs) -> Response:
         owner = request.user
         instance = self.get_object()
         if owner != instance.response_user_id:
@@ -120,7 +120,7 @@ class FriendRequestDetailViewSet(viewsets.ModelViewSet):
             )
         return super().partial_update(request, *args, **kwargs)
 
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs) -> Response:
         owner = request.user
         instance = self.get_object()
         if owner != instance.request_user_id and owner != instance.response_user_id:

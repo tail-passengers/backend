@@ -20,5 +20,5 @@ urlpatterns = [
     path("login/42/callback/", views.CallbackAPIView.as_view()),
     path("logout/", logout_view, name="logout"),
     # TODO test용 삭제
-    path("login/<str:intra_id>/", views.testAccountLogin.as_view()),
+    path("login/<str:intra_id>/", views.TestAccountLogin.as_view()),
 ]

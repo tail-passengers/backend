@@ -1,6 +1,7 @@
 import asyncio
 import json
 import uuid
+from typing import Deque
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from accounts.models import Users, UserStatusEnum
@@ -12,15 +13,15 @@ from games.serializers import GeneralGameLogsSerializer
 from rest_framework.exceptions import ValidationError
 from .module.Player import Player
 
-ACTIVE_GAMES: dict[str, GeneralGame] = {}
+ACTIVE_GENERAL_GAMES: dict[str, GeneralGame] = {}
 
 
 class LoginConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
-        self.user: Users = None
+        self.user: Users or None = None
 
-    async def connect(self):
+    async def connect(self) -> None:
         self.user = self.scope["user"]
         if self.user.is_authenticated:
             await self.accept()
@@ -28,23 +29,24 @@ class LoginConsumer(AsyncWebsocketConsumer):
         else:
             await self.close()
 
-    async def disconnect(self, close_code):
+    async def disconnect(self, close_code) -> None:
         if self.user.is_authenticated:
             await self.update_user_status(UserStatusEnum.OFFLINE)
 
     @database_sync_to_async
-    def update_user_status(self, status):
+    def update_user_status(self, status: UserStatusEnum) -> None:
         Users.objects.filter(user_id=self.user.user_id).update(status=status)
 
 
 class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
-    intra_id_list, wait_list = list(), deque()
+    intra_id_list: list[str] = list()
+    wait_list: Deque["GeneralGameWaitConsumer"] = deque()
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
-        self.user: Users = None
+        self.user: Users or None = None
 
-    async def connect(self):
+    async def connect(self) -> None:
         self.user = self.scope["user"]
         if self.user.is_authenticated and await self.add_wait_list():
             await self.accept()
@@ -53,7 +55,7 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
         else:
             await self.close()
 
-    async def disconnect(self, close_code):
+    async def disconnect(self, close_code) -> None:
         if self.user.is_authenticated:
             if (
                 self in GeneralGameWaitConsumer.wait_list
@@ -63,7 +65,7 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
                 GeneralGameWaitConsumer.wait_list.remove(self)
 
     @classmethod
-    async def game_match(cls):
+    async def game_match(cls) -> None:
         game_id = str(uuid.uuid4())
         player1 = GeneralGameWaitConsumer.wait_list.popleft()
         player2 = GeneralGameWaitConsumer.wait_list.popleft()
@@ -71,11 +73,11 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
         await player2.send(json.dumps({"game_id": game_id}))
         GeneralGameWaitConsumer.intra_id_list.remove(player1.user.intra_id)
         GeneralGameWaitConsumer.intra_id_list.remove(player2.user.intra_id)
-        ACTIVE_GAMES[game_id] = GeneralGame(
+        ACTIVE_GENERAL_GAMES[game_id] = GeneralGame(
             Player(1, player1.user.intra_id), Player(2, player2.user.intra_id)
         )
 
-    async def add_wait_list(self):
+    async def add_wait_list(self) -> bool:
         if self.user.intra_id in GeneralGameWaitConsumer.intra_id_list:
             return False
         GeneralGameWaitConsumer.wait_list.append(self)
@@ -83,7 +85,6 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
         return True
 
 
-# TODO url game_id 유효한지? 동일한지? 확인 로직 필요?
 class GeneralGameConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
@@ -92,18 +93,19 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
         self.game_group_name: str | None = None
         self.game_loop_task: asyncio.Task | None = None
 
-    async def connect(self):
+    async def connect(self) -> None:
         self.user = self.scope["user"]
         if self.user.is_authenticated:
             self.game_id = str(self.scope["url_route"]["kwargs"]["game_id"])
             if (
-                self.game_id not in ACTIVE_GAMES.keys()
-                or ACTIVE_GAMES[self.game_id].get_status() != PlayerStatus.WAIT
-                or ACTIVE_GAMES[self.game_id].get_player(self.user.intra_id) is None
+                self.game_id not in ACTIVE_GENERAL_GAMES.keys()
+                or ACTIVE_GENERAL_GAMES[self.game_id].get_status() != PlayerStatus.WAIT
+                or ACTIVE_GENERAL_GAMES[self.game_id].get_player(self.user.intra_id)
+                is None
             ):
                 await self.close()
                 return
-            game = ACTIVE_GAMES[self.game_id]
+            game = ACTIVE_GENERAL_GAMES[self.game_id]
             player, number = game.get_player(self.user.intra_id)
             self.game_group_name = f"game_{self.game_id}"
             await self.channel_layer.group_add(self.game_group_name, self.channel_name)
@@ -112,10 +114,10 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
         else:
             await self.close()
 
-    async def disconnect(self, close_code):
+    async def disconnect(self, close_code) -> None:
         if self.user.is_authenticated:
-            if self.game_id in ACTIVE_GAMES.keys():
-                ACTIVE_GAMES.pop(self.game_id)
+            if self.game_id in ACTIVE_GENERAL_GAMES.keys():
+                ACTIVE_GENERAL_GAMES.pop(self.game_id)
                 self.game_loop_task.cancel()
                 try:  # cancel() 동작이 끝날 때까지 대기
                     await self.game_loop_task
@@ -125,15 +127,15 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
                 self.game_group_name, self.channel_name
             )
 
-    async def game_message(self, event):
+    async def game_message(self, event) -> None:
         message = event["message"]
 
         # Send message to WebSocket
         await self.send(text_data=message)
 
-    async def receive(self, text_data=None, bytes_data=None):
+    async def receive(self, text_data: json = None, bytes_data=None) -> None:
         data = json.loads(text_data)
-        game = ACTIVE_GAMES[self.game_id]
+        game = ACTIVE_GENERAL_GAMES[self.game_id]
         if (
             data["message_type"] == MessageType.READY.value
             and game.get_status() == PlayerStatus.WAIT
@@ -179,7 +181,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
                     )
                 )
 
-    async def send_game_messages_loop(self, game: GeneralGame):
+    async def send_game_messages_loop(self, game: GeneralGame) -> None:
         while True:
             await asyncio.sleep(1 / 30)
             if game.get_status() == PlayerStatus.PLAYING:
