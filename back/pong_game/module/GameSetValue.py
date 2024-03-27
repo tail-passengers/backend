@@ -10,7 +10,9 @@ BALL_SPEED_X: int = 0
 BALL_SPEED_Z: int = -10
 BALL_RADIUS: int = 20
 MAX_SCORE: int = 5
-PADDLE_BOUNDARY: float = FIELD_WIDTH / 2 - PADDLE_WIDTH / 2
+PADDLE_BOUNDARY: int = FIELD_WIDTH // 2 - PADDLE_WIDTH // 2
+TOURNAMENT_PLAYER_MAX_CNT: int = 4
+NOT_ALLOWED_TOURNAMENT_NAME: str = "wait"
 
 
 class KeyboardInput(Enum):
@@ -30,6 +32,7 @@ class PlayerStatus(Enum):
 
 
 class MessageType(Enum):
+    CREATE = "create"
     READY = "ready"
     START = "start"
     PLAYING = "playing"
@@ -42,3 +45,21 @@ class MessageType(Enum):
 class GameTimeType(Enum):
     START_TIME = "start_time"
     END_TIME = "end_time"
+
+
+class RoundNumber(Enum):
+    ROUND_1 = "1"
+    ROUND_2 = "2"
+    ROUND_3 = "3"
+
+
+class TournamentStatus(Enum):
+    WAIT = "wait"
+    READY = "ready"
+    PLAYING = "playing"
+    END = "end"
+
+
+class ResultType(Enum):
+    SUCCESS = "success"
+    FAIL = "fail"
