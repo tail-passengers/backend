@@ -4,6 +4,7 @@ from .GameSetValue import (
     PADDLE_WIDTH,
     FIELD_LENGTH,
     KeyboardInput,
+    PADDLE_BOUNDARY,
 )
 
 
@@ -11,7 +12,7 @@ class Paddle:
     def __init__(self, number: int):
         self.position_x: float = 0
         self.position_y: float = 0
-        self.position_z: float = FIELD_LENGTH / 2 if number == 1 else -FIELD_LENGTH / 2
+        self.position_z: float = -FIELD_LENGTH / 2 if number == 1 else FIELD_LENGTH / 2
 
         self.left: bool = False
         self.right: bool = False
@@ -44,6 +45,6 @@ class Paddle:
     def _move(self, direction: int) -> None:
         new_paddle_x = self.position_x + direction * PADDLE_SPEED
         self.position_x = max(
-            -FIELD_WIDTH / 2 + PADDLE_WIDTH / 2,
-            min(FIELD_WIDTH / 2 - PADDLE_WIDTH / 2, new_paddle_x),
+            -PADDLE_BOUNDARY,
+            min(PADDLE_BOUNDARY, new_paddle_x),
         )

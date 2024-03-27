@@ -10,6 +10,7 @@ BALL_SPEED_X: int = 0
 BALL_SPEED_Z: int = -10
 BALL_RADIUS: int = 20
 MAX_SCORE: int = 5
+PADDLE_BOUNDARY: float = FIELD_WIDTH / 2 - PADDLE_WIDTH / 2
 
 
 class KeyboardInput(Enum):
