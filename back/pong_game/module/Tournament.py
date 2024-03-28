@@ -34,14 +34,14 @@ class Tournament:
 
     def _join_tournament_with_intra_id(self, intra_id: str) -> PlayerNumber:
         for idx, player in enumerate(self.player_list):
-            if player.get_intra_id() == intra_id:
-                return PlayerNumber.PLAYER_1
-            elif player is None:
+            if player is None:
                 self.player_list[idx] = Player(number=idx + 1, intra_id=intra_id)
                 self.player_total_cnt += 1
                 if self.player_total_cnt == TOURNAMENT_PLAYER_MAX_CNT:
                     self.status = TournamentStatus.READY
                 return list(PlayerNumber)[idx]
+            elif player.get_intra_id() == intra_id:
+                return PlayerNumber.PLAYER_1
 
     def build_tournament_wait_detail_json(self, intra_id: str) -> tuple[str, json]:
         player_number = self._join_tournament_with_intra_id(intra_id=intra_id).value
