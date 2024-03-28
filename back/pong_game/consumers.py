@@ -225,6 +225,7 @@ class TournamentGameWaitConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
         self.user: Users or None = None
+        self.isProcessingComplete: bool = False
 
     async def connect(self) -> None:
         self.user = self.scope["user"]
@@ -244,6 +245,9 @@ class TournamentGameWaitConsumer(AsyncWebsocketConsumer):
             await self.close()
 
     async def receive(self, text_data: json = None, bytes_data=None) -> None:
+        if self.isProcessingComplete:
+            return
+
         data = json.loads(text_data)
         if data.get("message_type") != MessageType.CREATE.value:
             return
@@ -257,6 +261,7 @@ class TournamentGameWaitConsumer(AsyncWebsocketConsumer):
             result = ResultType.FAIL.value
         else:
             result = ResultType.SUCCESS.value
+            self.isProcessingComplete = True
 
         await self.send(
             json.dumps({"message_type": MessageType.CREATE.value, "result": result})
