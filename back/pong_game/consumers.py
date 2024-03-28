@@ -19,6 +19,7 @@ from games.serializers import GeneralGameLogsSerializer
 from rest_framework.exceptions import ValidationError
 from .module.Player import Player
 from .module.Tournament import Tournament
+from games.models import TournamentGameLogs
 
 ACTIVE_GENERAL_GAMES: dict[str, GeneralGame] = {}
 ACTIVE_TOURNAMENTS: dict[str, Tournament] = {}
@@ -222,10 +223,18 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
 
 
 class TournamentGameWaitConsumer(AsyncWebsocketConsumer):
+    queryset = TournamentGameLogs.objects.all()
+
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
         self.user: Users or None = None
         self.isProcessingComplete: bool = False
+
+    @database_sync_to_async
+    def is_exist_game_data_in_db(self, tournament_name: str) -> bool:
+        if self.queryset.filter(tournament_name=tournament_name):
+            return True
+        return False
 
     async def connect(self) -> None:
         self.user = self.scope["user"]
@@ -253,7 +262,9 @@ class TournamentGameWaitConsumer(AsyncWebsocketConsumer):
             return
 
         tournament_name = data.get("tournament_name")
-        if tournament_name is None:
+        if await self.is_exist_game_data_in_db(tournament_name=tournament_name):
+            result = ResultType.FAIL.value
+        elif tournament_name is None:
             result = ResultType.FAIL.value
         elif tournament_name == NOT_ALLOWED_TOURNAMENT_NAME:
             result = ResultType.FAIL.value
