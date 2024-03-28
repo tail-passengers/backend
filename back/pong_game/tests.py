@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import json
 import uuid
 import time
@@ -22,6 +23,8 @@ from pong_game.module.GameSetValue import (
 from games.models import GeneralGameLogs
 from pong_game.consumers import ACTIVE_TOURNAMENTS
 from pong_game.module.Tournament import Tournament
+from django.utils import timezone
+from games.models import TournamentGameLogs
 
 
 class LoginConsumerTests(TestCase):
@@ -462,6 +465,21 @@ class TournamentGameWaitConsumerTests(TestCase):
     ]
 
     @database_sync_to_async
+    def create_test_tournament_log(self, tournament_name: str):
+        # 테스트 사용자 생성
+        TournamentGameLogs.objects.create(
+            tournament_name=tournament_name,
+            round=1,
+            player1=get_user_model().objects.create_user(intra_id="default1"),
+            player2=get_user_model().objects.create_user(intra_id="default2"),
+            player1_score=5,
+            player2_score=0,
+            start_time=timezone.now() - datetime.timedelta(hours=5),
+            end_time=timezone.now(),
+            is_final=False,
+        )
+
+    @database_sync_to_async
     def create_test_user(self, intra_id):
         # 테스트 사용자 생성
         return get_user_model().objects.create_user(intra_id=intra_id)
@@ -588,6 +606,21 @@ class TournamentGameWaitConsumerTests(TestCase):
             communicator1,
             {
                 "message_type": MessageType.CREATE.value,
+            },
+        )
+
+        self.assertEqual(response_dict["message_type"], MessageType.CREATE.value)
+        self.assertEqual(response_dict["result"], ResultType.FAIL.value)
+
+        # consumer가 fail를 보내는지 테스트
+        # 4. db에 이미 존재하는 경우
+        tournament_name = "haha"
+        await self.create_test_tournament_log(tournament_name=tournament_name)
+        response_dict = await self.send_and_receive(
+            communicator1,
+            {
+                "message_type": MessageType.CREATE.value,
+                "tournament_name": tournament_name,
             },
         )
 
