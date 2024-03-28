@@ -245,10 +245,10 @@ class TournamentGameWaitConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data: json = None, bytes_data=None) -> None:
         data = json.loads(text_data)
-        if data.get(key="message_type") != MessageType.CREATE.value:
+        if data.get("message_type") != MessageType.CREATE.value:
             return
 
-        tournament_name = data.get(key="tournament_name")
+        tournament_name = data.get("tournament_name")
         if tournament_name is None:
             result = ResultType.FAIL.value
         elif tournament_name == NOT_ALLOWED_TOURNAMENT_NAME:
