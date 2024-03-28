@@ -655,3 +655,85 @@ class TournamentGameWaitConsumerTests(TestCase):
             response = None
 
         self.assertEqual(response, None)
+
+
+class TournamentGameConsumerTests(TestCase):
+    expected_tournaments_data: list[dict[str, str]]
+    TEST_TOURNAMENTS_INFO = [
+        {
+            "tournament_name": "test_tournament1",
+            "create_user_intra_id": "test_intra_id1",
+            "wait_num": "1",
+        },
+        {
+            "tournament_name": "test_tournament2",
+            "create_user_intra_id": "test_intra_id2",
+            "wait_num": "1",
+        },
+    ]
+
+    @database_sync_to_async
+    def create_test_tournament_log(self, tournament_name: str):
+        # 테스트 사용자 생성
+        TournamentGameLogs.objects.create(
+            tournament_name=tournament_name,
+            round=1,
+            player1=get_user_model().objects.create_user(intra_id="default1"),
+            player2=get_user_model().objects.create_user(intra_id="default2"),
+            player1_score=5,
+            player2_score=0,
+            start_time=timezone.now() - datetime.timedelta(hours=5),
+            end_time=timezone.now(),
+            is_final=False,
+        )
+
+    @database_sync_to_async
+    def create_test_user(self, intra_id):
+        # 테스트 사용자 생성
+        return get_user_model().objects.create_user(intra_id=intra_id)
+
+    @database_sync_to_async
+    def delete_test_user(self, user):
+        # 테스트 사용자 삭제
+        user.delete()
+
+    def setUp(self):
+        """
+        가짜 토너먼트 데이터 준비
+        """
+        self.fake_tournaments = {
+            tournament_info["tournament_name"]: Tournament(
+                tournament_name=tournament_info["tournament_name"],
+                create_user_intra_id=tournament_info["create_user_intra_id"],
+            )
+            for tournament_info in self.TEST_TOURNAMENTS_INFO
+        }
+        # 가짜 데이터를 ACTIVE_TOURNAMENTS에 주입
+        ACTIVE_TOURNAMENTS.update(self.fake_tournaments)
+
+        self.expected_tournaments_data = [
+            {
+                "tournament_name": tournament_info["tournament_name"],
+                "wait_num": tournament_info["wait_num"],
+            }
+            for tournament_info in self.TEST_TOURNAMENTS_INFO
+        ]
+
+    def tearDown(self):
+        """
+        테스트 후 토너먼트 데이터 삭제
+        """
+        for key in self.fake_tournaments.keys():
+            del ACTIVE_TOURNAMENTS[key]
+
+    async def test_recieve_wait_ready_data(self):
+        self.user1 = await self.create_test_user(intra_id="test1")
+
+        communicator1 = WebsocketCommunicator(
+            application, "/ws/tournament_game/test_tournament1/"
+        )
+        print("communicator1:", communicator1)
+        communicator1.scope["user"] = self.user1
+        connected, _ = await communicator1.connect()
+        # 접속 확인
+        self.assertTrue(connected)
