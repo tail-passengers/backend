@@ -2,6 +2,7 @@ import asyncio
 import json
 import uuid
 import time
+from typing import List, Dict
 from unittest.mock import patch
 
 from back.asgi import (
@@ -13,8 +14,14 @@ from channels.testing import WebsocketCommunicator
 from django.contrib.auth import get_user_model
 from channels.db import database_sync_to_async
 from accounts.models import Users, UserStatusEnum
-from pong_game.module.GameSetValue import MessageType
+from pong_game.module.GameSetValue import (
+    MessageType,
+    ResultType,
+    NOT_ALLOWED_TOURNAMENT_NAME,
+)
 from games.models import GeneralGameLogs
+from pong_game.consumers import ACTIVE_TOURNAMENTS
+from pong_game.module.Tournament import Tournament
 
 
 class LoginConsumerTests(TestCase):
@@ -437,3 +444,181 @@ class GeneralGameConsumerTests(TestCase):
 
         await communicator1.disconnect()
         await communicator2.disconnect()
+
+
+class TournamentGameWaitConsumerTests(TestCase):
+    expected_tournaments_data: list[dict[str, str]]
+    TEST_TOURNAMENTS_INFO = [
+        {
+            "tournament_name": "test_tournament1",
+            "create_user_intra_id": "test_intra_id1",
+            "wait_num": "1",
+        },
+        {
+            "tournament_name": "test_tournament2",
+            "create_user_intra_id": "test_intra_id2",
+            "wait_num": "1",
+        },
+    ]
+
+    @database_sync_to_async
+    def create_test_user(self, intra_id):
+        # 테스트 사용자 생성
+        return get_user_model().objects.create_user(intra_id=intra_id)
+
+    @database_sync_to_async
+    def delete_test_user(self, user):
+        # 테스트 사용자 삭제
+        user.delete()
+
+    def setUp(self):
+        """
+        가짜 토너먼트 데이터 준비
+        """
+        self.fake_tournaments = {
+            tournament_info["tournament_name"]: Tournament(
+                tournament_name=tournament_info["tournament_name"],
+                create_user_intra_id=tournament_info["create_user_intra_id"],
+            )
+            for tournament_info in self.TEST_TOURNAMENTS_INFO
+        }
+        # 가짜 데이터를 ACTIVE_TOURNAMENTS에 주입
+        ACTIVE_TOURNAMENTS.update(self.fake_tournaments)
+
+        self.expected_tournaments_data = [
+            {
+                "tournament_name": tournament_info["tournament_name"],
+                "wait_num": tournament_info["wait_num"],
+            }
+            for tournament_info in self.TEST_TOURNAMENTS_INFO
+        ]
+
+    def tearDown(self):
+        """
+        테스트 후 토너먼트 데이터 삭제
+        """
+        for key in self.fake_tournaments.keys():
+            del ACTIVE_TOURNAMENTS[key]
+
+    async def send_and_receive(self, communicator, message_data):
+        """
+        특정 데이터를 전송하고 응답을 받아오는 함수
+        """
+
+        # 메시지 전송
+        await communicator.send_to(text_data=json.dumps(message_data))
+
+        # 응답 수신
+        response = await communicator.receive_from()
+        return json.loads(response)
+
+    async def test_receive_active_tournamnet_data(self):
+        """
+        현재 존재하는 토너먼트 방을 잘 받아오는지 테스트
+        """
+
+        self.user1 = await self.create_test_user(intra_id="test1")
+        communicator1 = WebsocketCommunicator(application, "/ws/tournament_game/wait/")
+        communicator1.scope["user"] = self.user1
+        connected, _ = await communicator1.connect()
+        # 접속 확인
+        self.assertTrue(connected)
+
+        # 연결시 서버에서 던져주는 gamelist 저장
+        response = await communicator1.receive_from()
+        response_dict = json.loads(response)
+
+        # 받아온 game_list랑 expected_tournaments_data 길이 확인
+        self.assertEqual(
+            len(response_dict["game_list"]), len(self.expected_tournaments_data)
+        )
+
+        # 데이터가 동일한지 확인
+        for actual, expected in zip(
+            response_dict["game_list"], self.expected_tournaments_data
+        ):
+            self.assertEqual(actual["tournament_name"], expected["tournament_name"])
+            self.assertEqual(actual["wait_num"], expected["wait_num"])
+
+    async def test_receive_success_or_fail_data(self):
+        """
+        토너먼트 네임을 consumer에게 보냈을때 성공 또는 실패를 클라이언트에게 잘 보내는지 테스트
+        """
+
+        self.user1 = await self.create_test_user(intra_id="test1")
+        communicator1 = WebsocketCommunicator(application, "/ws/tournament_game/wait/")
+        communicator1.scope["user"] = self.user1
+        connected, _ = await communicator1.connect()
+        # 접속 확인
+        self.assertTrue(connected)
+
+        # 연결시 서버에서 던져주는 gamelist 저장
+        response = await communicator1.receive_from()
+        response_dict = json.loads(response)
+        existent_tournament_name = response_dict["game_list"][0]["tournament_name"]
+
+        # consumer가 fail를 보내는지 테스트
+        # 1. 현재 존재하는 토너먼트 네임을 보낼때
+        response_dict = await self.send_and_receive(
+            communicator1,
+            {
+                "message_type": MessageType.CREATE.value,
+                "tournament_name": existent_tournament_name,
+            },
+        )
+        self.assertEqual(response_dict["message_type"], MessageType.CREATE.value)
+        self.assertEqual(response_dict["result"], ResultType.FAIL.value)
+
+        # consumer가 fail를 보내는지 테스트
+        # 2. 금지된 토너먼트 네임을 보낼때
+        response_dict = await self.send_and_receive(
+            communicator1,
+            {
+                "message_type": MessageType.CREATE.value,
+                "tournament_name": NOT_ALLOWED_TOURNAMENT_NAME,
+            },
+        )
+
+        self.assertEqual(response_dict["message_type"], MessageType.CREATE.value)
+        self.assertEqual(response_dict["result"], ResultType.FAIL.value)
+
+        # consumer가 fail를 보내는지 테스트
+        # 3. 토너먼트 네임이 존재하지 않을때
+        response_dict = await self.send_and_receive(
+            communicator1,
+            {
+                "message_type": MessageType.CREATE.value,
+            },
+        )
+
+        self.assertEqual(response_dict["message_type"], MessageType.CREATE.value)
+        self.assertEqual(response_dict["result"], ResultType.FAIL.value)
+
+        # consumer가 success를 보내는지 테스트
+        response_dict = await self.send_and_receive(
+            communicator1,
+            {
+                "message_type": MessageType.CREATE.value,
+                "tournament_name": "nonexistent_tournament_name",
+            },
+        )
+
+        self.assertEqual(response_dict["message_type"], MessageType.CREATE.value)
+        self.assertEqual(response_dict["result"], ResultType.SUCCESS.value)
+
+        # 성공 이후 다시 보내는 테스트 아무것도 받지 말아야함
+        await communicator1.send_to(
+            text_data=json.dumps(
+                {
+                    "message_type": MessageType.CREATE.value,
+                    "tournament_name": "nonexistent_tournament_name",
+                }
+            )
+        )
+
+        try:
+            response = await communicator1.receive_from(timeout=1)
+        except TimeoutError:
+            response = None
+
+        self.assertEqual(response, None)
