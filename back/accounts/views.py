@@ -68,11 +68,10 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
     http_method_names = [
         "get",
         "patch",
-        "delete",
-    ]  # TODO delete 나중에 제거 예정
+    ]
     lookup_field: str = "intra_id"
 
-    # 우선 nickname과 profile_image를 제외한 모든 필드를 수정 불가로 설정
+    # nickname과 profile_image, status를 제외한 모든 필드를 수정 불가로 설정
     can_not_change_fields: tuple[str] = (
         "user_id",
         "password",
@@ -83,7 +82,6 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
         "lose_count",
         "created_time",
         "updated_time",
-        "status",
         "is_staff",
         "is_active",
         "groups",
@@ -99,23 +97,6 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
             raise ValidationError({"detail": "존재하지 않는 사용자입니다."})
         serializer = UsersDetailSerializer(queryset, many=True)
         return Response(serializer.data)
-
-    def destroy(self, request, *args, **kwargs) -> Response:
-        """
-        DELETE method override
-        """
-        user = Users.objects.get(intra_id=kwargs["intra_id"])
-        if request.user.intra_id != user.intra_id:
-            raise PermissionDenied(
-                {"detail": "다른 사용자의 정보는 삭제할 수 없습니다."}
-            )
-        if user.profile_image:
-            try:
-                os.remove(os.path.join(settings.MEDIA_ROOT, user.profile_image.name))
-            except FileNotFoundError:
-                print("File not found")
-        self.perform_destroy(user)
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def partial_update(self, request, *args, **kwargs) -> Response:
         """
