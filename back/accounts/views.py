@@ -1,6 +1,5 @@
 import os
 import requests
-import uuid
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,11 +7,19 @@ from django.shortcuts import redirect
 from django.core.files.base import ContentFile
 from django.conf import settings
 from .serializers import UsersSerializer, UsersDetailSerializer
-from .models import Users
+from .models import Users, HouseEnum
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import login
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from django.contrib.auth import logout
+
+
+HOUSE = {
+    "Gam": HouseEnum.RAVENCLAW,
+    "Gun": HouseEnum.HUFFLEPUFF,
+    "Lee": HouseEnum.GRYFFINDOR,
+    "Gon": HouseEnum.SLYTHERIN,
+}
 
 
 # https://squirmm.tistory.com/entry/Django-DRF-Method-Override-%EB%B0%A9%EB%B2%95
@@ -164,12 +171,19 @@ class CallbackAPIView(APIView):
             headers={"Authorization": f"Bearer {access_token}"},
         )
         user_info = user_info_request.json()
+        coalition_info_request = requests.get(
+            f"https://api.intra.42.fr/v2/users/{user_info['id']}/coalitions",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        coalition_info = coalition_info_request.json()
         login_id = user_info["login"]
         image_address = user_info["image"]["versions"]["large"]
+        house = HOUSE[coalition_info[0]["name"]]
         user_instance, created = Users.objects.get_or_create(
             intra_id=login_id,
             nickname=login_id,
             status=0,
+            house=house,
         )
 
         if created:
