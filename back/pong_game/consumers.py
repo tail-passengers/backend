@@ -290,13 +290,11 @@ class TournamentGameConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
         self.user: Users or None = None
-        self.tournament_name: str = self.scope["url_route"]["kwargs"]["tournament_name"]
-        self.group_name_prefix: str = f"tournament_{self.tournament_name}"
-        self.group_name_a: str = self.group_name_prefix + "a"
-        self.group_name_b: str = self.group_name_prefix + "b"
-        self.tournament: Tournament or None = ACTIVE_TOURNAMENTS.get(
-            self.tournament_name
-        )
+        self.tournament_name: str = ""
+        self.group_name_prefix: str = ""
+        self.group_name_a: str = ""
+        self.group_name_b: str = ""
+        self.tournament: Tournament or None = None
 
     async def send_message(self, event) -> None:
         message = event["message"]
@@ -307,9 +305,16 @@ class TournamentGameConsumer(AsyncWebsocketConsumer):
     # TODO accept 위치 테스트 터지면 보기
     async def connect(self) -> None:
         self.user = self.scope["user"]
+        if self.user.is_authenticated:
+            self.tournament_name: str = self.scope["url_route"]["kwargs"][
+                "tournament_name"
+            ]
+            self.group_name_prefix = f"tournament_{self.tournament_name}"
+            self.group_name_a = self.group_name_prefix + "a"
+            self.group_name_b = self.group_name_prefix + "b"
+            self.tournament = ACTIVE_TOURNAMENTS.get(self.tournament_name)
         if (
-            self.user.is_authenticated
-            and self.tournament is not None
+            self.tournament is not None
             and self.tournament.get_statue() == TournamentStatus.WAIT
         ):
             await self.accept()
