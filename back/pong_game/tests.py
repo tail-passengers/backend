@@ -19,6 +19,7 @@ from pong_game.module.GameSetValue import (
     MessageType,
     ResultType,
     NOT_ALLOWED_TOURNAMENT_NAME,
+    PlayerNumber,
 )
 from games.models import GeneralGameLogs
 from pong_game.consumers import ACTIVE_TOURNAMENTS
@@ -672,6 +673,17 @@ class TournamentGameConsumerTests(TestCase):
         },
     ]
 
+    def __init__(self, methodName: str = ...):
+        super().__init__(methodName)
+        self.room_1_owner = None
+        self.room_1_user1 = None
+        self.room_1_user2 = None
+        self.room_1_user3 = None
+        self.room_2_owner = None
+        self.room_2_user1 = None
+        self.room_2_user2 = None
+        self.room_2_user3 = None
+
     @database_sync_to_async
     def create_test_tournament_log(self, tournament_name: str):
         # 테스트 사용자 생성
@@ -726,14 +738,179 @@ class TournamentGameConsumerTests(TestCase):
         for key in self.fake_tournaments.keys():
             del ACTIVE_TOURNAMENTS[key]
 
-    async def test_recieve_wait_ready_data(self):
-        self.user1 = await self.create_test_user(intra_id="test1")
-
-        communicator1 = WebsocketCommunicator(
-            application, "/ws/tournament_game/test_tournament1/"
+    async def connect_and_echo_data(self, tournament_name: str, user: Users) -> tuple:
+        """
+        연결하고 받은 메시지를 그대로 다시 보내는 함수
+        """
+        communicator = WebsocketCommunicator(
+            application, f"/ws/tournament_game/{tournament_name}/"
         )
-        print("communicator1:", communicator1)
-        communicator1.scope["user"] = self.user1
-        connected, _ = await communicator1.connect()
-        # 접속 확인
+        communicator.scope["user"] = user
+        connected, _ = await communicator.connect()
         self.assertTrue(connected)
+        response = await communicator.receive_from()
+        await communicator.send_to(response)
+        response_dict = json.loads(response)
+        return communicator, response_dict
+
+    async def perform_test_sequence(
+        self, tournament_name: str, users_info: list[dict]
+    ) -> list:
+        """
+        특정 토너먼트에 대해 사용자 생성, 연결 및 대기 메시지 확인을 수행하는 메서드.
+        communicators를 반환
+        """
+        communicators = []
+        total_num = 1
+        for user_info in users_info:
+            user = await self.create_test_user(intra_id=user_info["intra_id"])
+            communicator, response_dict = await self.connect_and_echo_data(
+                tournament_name=tournament_name, user=user
+            )
+
+            self.assertEqual(response_dict["message_type"], MessageType.WAIT.value)
+            self.assertEqual(response_dict["intra_id"], user.intra_id)
+            self.assertEqual(response_dict["total"], total_num)
+            self.assertEqual(
+                response_dict["number"], user_info["expected_player_number"].value
+            )
+
+            communicators.append(communicator)
+            total_num += 1
+        return communicators
+
+    async def check_recieved_ready_messgae_valid(
+        self, users_ready_info: list[dict], communicators: list
+    ) -> None:
+        """
+        ready_message가 있는지, 그 값이 올바른지 확인
+        """
+        info_index: int = 0
+        has_ready_message: bool = False
+        for communicator in communicators:
+            while await communicator.receive_nothing() is False:
+                message = await communicator.receive_from()
+                message_dict = json.loads(message)
+                if message_dict["message_type"] == MessageType.READY.value:
+                    self.assertEqual(
+                        message_dict["round"], users_ready_info[info_index]["round"]
+                    )
+                    self.assertEqual(
+                        message_dict["1p"], users_ready_info[info_index]["1p"]
+                    )
+                    self.assertEqual(
+                        message_dict["2p"], users_ready_info[info_index]["2p"]
+                    )
+                    info_index += 1
+                    has_ready_message = True
+            if has_ready_message is False:
+                self.assertTrue(False)
+
+    async def test_receive_wait_ready_data(self):
+        users_info_test_tournament1 = [
+            {
+                "intra_id": "test_intra_id1",
+                "expected_player_number": PlayerNumber.PLAYER_1,
+            },
+            {
+                "intra_id": "room_1_user1",
+                "expected_player_number": PlayerNumber.PLAYER_2,
+            },
+            {
+                "intra_id": "room_1_user2",
+                "expected_player_number": PlayerNumber.PLAYER_3,
+            },
+            {
+                "intra_id": "room_1_user3",
+                "expected_player_number": PlayerNumber.PLAYER_4,
+            },
+        ]
+
+        users_info_test_tournament2 = [
+            {
+                "intra_id": "test_intra_id2",
+                "expected_player_number": PlayerNumber.PLAYER_1,
+            },
+            {
+                "intra_id": "room_2_user1",
+                "expected_player_number": PlayerNumber.PLAYER_2,
+            },
+            {
+                "intra_id": "room_2_user2",
+                "expected_player_number": PlayerNumber.PLAYER_3,
+            },
+            {
+                "intra_id": "room_2_user3",
+                "expected_player_number": PlayerNumber.PLAYER_4,
+            },
+        ]
+
+        # 방 1: [Back] 클라이언트에게 wait 전송과 그 값 그대로 [Front] wait 수신하고 Back에게 wait 전송까지
+        # wait 값 확인하는 절차도 있음
+        self.test_tournament1_communicators = await self.perform_test_sequence(
+            "test_tournament1", users_info_test_tournament1
+        )
+
+        # 방 2: [Back] 클라이언트에게 wait 전송과 그 값 그대로 [Front] wait 수신하고 Back에게 wait 전송까지
+        # wait 값 확인하는 절차도 있음
+        self.test_tournament2_communicators = await self.perform_test_sequence(
+            "test_tournament2", users_info_test_tournament2
+        )
+
+        users_ready_info_test_tournament1 = [
+            {
+                "round": "1",
+                "1p": "test_intra_id1",
+                "2p": "room_1_user1",
+            },
+            {
+                "round": "1",
+                "1p": "test_intra_id1",
+                "2p": "room_1_user1",
+            },
+            {
+                "round": "2",
+                "1p": "room_1_user2",
+                "2p": "room_1_user3",
+            },
+            {
+                "round": "2",
+                "1p": "room_1_user2",
+                "2p": "room_1_user3",
+            },
+        ]
+
+        users_ready_info_test_tournament2 = [
+            {
+                "round": "1",
+                "1p": "test_intra_id2",
+                "2p": "room_2_user1",
+            },
+            {
+                "round": "1",
+                "1p": "test_intra_id2",
+                "2p": "room_2_user1",
+            },
+            {
+                "round": "2",
+                "1p": "room_2_user2",
+                "2p": "room_2_user3",
+            },
+            {
+                "round": "2",
+                "1p": "room_2_user2",
+                "2p": "room_2_user3",
+            },
+        ]
+
+        # 방 1 유저들이 ready 메시지를 잘 받았는지 확인
+        await self.check_recieved_ready_messgae_valid(
+            users_ready_info=users_ready_info_test_tournament1,
+            communicators=self.test_tournament1_communicators,
+        )
+
+        # 방 2 유저들이 ready 메시지를 잘 받았는지 확인
+        await self.check_recieved_ready_messgae_valid(
+            users_ready_info=users_ready_info_test_tournament2,
+            communicators=self.test_tournament2_communicators,
+        )
