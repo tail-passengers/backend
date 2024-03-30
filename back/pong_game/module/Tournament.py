@@ -95,8 +95,9 @@ class Tournament:
     def get_player_total_cnt(self) -> int:
         return self.player_total_cnt
 
-    def try_set_ready(self, player_number: PlayerNumber, intra_id: str) -> bool:
-        idx = list(PlayerNumber).index(player_number)
+    def try_set_ready(self, player_number: str, intra_id: str) -> bool:
+        player_numbers = [player.value for player in PlayerNumber]
+        idx = player_numbers.index(player_number)
         if (
             self.player_list[idx] is None
             or self.player_list[idx].get_intra_id() != intra_id
