@@ -663,41 +663,26 @@ class TournamentGameConsumerTests(TestCase):
     TEST_TOURNAMENTS_INFO = [
         {
             "tournament_name": "test_tournament1",
-            "create_user_intra_id": "test_intra_id1",
+            "create_user_intra_id": "room_1_owner",
             "wait_num": "1",
         },
         {
             "tournament_name": "test_tournament2",
-            "create_user_intra_id": "test_intra_id2",
+            "create_user_intra_id": "room_2_owner",
             "wait_num": "1",
         },
     ]
 
     def __init__(self, methodName: str = ...):
         super().__init__(methodName)
-        self.room_1_owner = None
-        self.room_1_user1 = None
-        self.room_1_user2 = None
-        self.room_1_user3 = None
-        self.room_2_owner = None
-        self.room_2_user1 = None
-        self.room_2_user2 = None
-        self.room_2_user3 = None
-
-    @database_sync_to_async
-    def create_test_tournament_log(self, tournament_name: str):
-        # 테스트 사용자 생성
-        TournamentGameLogs.objects.create(
-            tournament_name=tournament_name,
-            round=1,
-            player1=get_user_model().objects.create_user(intra_id="default1"),
-            player2=get_user_model().objects.create_user(intra_id="default2"),
-            player1_score=5,
-            player2_score=0,
-            start_time=timezone.now() - datetime.timedelta(hours=5),
-            end_time=timezone.now(),
-            is_final=False,
-        )
+        self.room_1_owner_id = "room_1_owner"
+        self.room_1_user1_id = "room_1_user1"
+        self.room_1_user2_id = "room_1_user2"
+        self.room_1_user3_id = "room_1_user3"
+        self.room_2_owner_id = "room_2_owner"
+        self.room_2_user1_id = "room_2_user1"
+        self.room_2_user2_id = "room_2_user2"
+        self.room_2_user3_id = "room_2_user3"
 
     @database_sync_to_async
     def create_test_user(self, intra_id):
@@ -809,38 +794,38 @@ class TournamentGameConsumerTests(TestCase):
     async def test_receive_wait_ready_data(self):
         users_info_test_tournament1 = [
             {
-                "intra_id": "test_intra_id1",
+                "intra_id": self.room_1_owner_id,
                 "expected_player_number": PlayerNumber.PLAYER_1,
             },
             {
-                "intra_id": "room_1_user1",
+                "intra_id": self.room_1_user1_id,
                 "expected_player_number": PlayerNumber.PLAYER_2,
             },
             {
-                "intra_id": "room_1_user2",
+                "intra_id": self.room_1_user2_id,
                 "expected_player_number": PlayerNumber.PLAYER_3,
             },
             {
-                "intra_id": "room_1_user3",
+                "intra_id": self.room_1_user3_id,
                 "expected_player_number": PlayerNumber.PLAYER_4,
             },
         ]
 
         users_info_test_tournament2 = [
             {
-                "intra_id": "test_intra_id2",
+                "intra_id": self.room_2_owner_id,
                 "expected_player_number": PlayerNumber.PLAYER_1,
             },
             {
-                "intra_id": "room_2_user1",
+                "intra_id": self.room_2_user1_id,
                 "expected_player_number": PlayerNumber.PLAYER_2,
             },
             {
-                "intra_id": "room_2_user2",
+                "intra_id": self.room_2_user2_id,
                 "expected_player_number": PlayerNumber.PLAYER_3,
             },
             {
-                "intra_id": "room_2_user3",
+                "intra_id": self.room_2_user3_id,
                 "expected_player_number": PlayerNumber.PLAYER_4,
             },
         ]
@@ -860,46 +845,46 @@ class TournamentGameConsumerTests(TestCase):
         users_ready_info_test_tournament1 = [
             {
                 "round": "1",
-                "1p": "test_intra_id1",
-                "2p": "room_1_user1",
+                "1p": self.room_1_owner_id,
+                "2p": self.room_1_user1_id,
             },
             {
                 "round": "1",
-                "1p": "test_intra_id1",
-                "2p": "room_1_user1",
+                "1p": self.room_1_owner_id,
+                "2p": self.room_1_user1_id,
             },
             {
                 "round": "2",
-                "1p": "room_1_user2",
-                "2p": "room_1_user3",
+                "1p": self.room_1_user2_id,
+                "2p": self.room_1_user3_id,
             },
             {
                 "round": "2",
-                "1p": "room_1_user2",
-                "2p": "room_1_user3",
+                "1p": self.room_1_user2_id,
+                "2p": self.room_1_user3_id,
             },
         ]
 
         users_ready_info_test_tournament2 = [
             {
                 "round": "1",
-                "1p": "test_intra_id2",
-                "2p": "room_2_user1",
+                "1p": self.room_2_owner_id,
+                "2p": self.room_2_user1_id,
             },
             {
                 "round": "1",
-                "1p": "test_intra_id2",
-                "2p": "room_2_user1",
+                "1p": self.room_2_owner_id,
+                "2p": self.room_2_user1_id,
             },
             {
                 "round": "2",
-                "1p": "room_2_user2",
-                "2p": "room_2_user3",
+                "1p": self.room_2_user2_id,
+                "2p": self.room_2_user3_id,
             },
             {
                 "round": "2",
-                "1p": "room_2_user2",
-                "2p": "room_2_user3",
+                "1p": self.room_2_user2_id,
+                "2p": self.room_2_user3_id,
             },
         ]
 
