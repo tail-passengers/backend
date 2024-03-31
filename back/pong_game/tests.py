@@ -3,7 +3,6 @@ import datetime
 import json
 import uuid
 import time
-from typing import List, Dict
 from unittest.mock import patch
 
 from back.asgi import (
@@ -716,13 +715,6 @@ class TournamentGameConsumerTests(TestCase):
             for tournament_info in self.TEST_TOURNAMENTS_INFO
         ]
 
-    def tearDown(self):
-        """
-        테스트 후 토너먼트 데이터 삭제
-        """
-        for key in self.fake_tournaments.keys():
-            del ACTIVE_TOURNAMENTS[key]
-
     async def connect_and_echo_data(self, tournament_name: str, user: Users) -> tuple:
         """
         연결하고 받은 메시지를 그대로 다시 보내는 함수
@@ -899,3 +891,37 @@ class TournamentGameConsumerTests(TestCase):
             users_ready_info=users_ready_info_test_tournament2,
             communicators=self.test_tournament2_communicators,
         )
+
+    async def test_disconnect_test1(self):
+        """
+        1. 방 인원이 3명이고 정상적으로 전부 다 나갔을때 방이 사라지는지(4명 전부 다 있으면 다음 consumer에서 처리해야함)
+        2. 방 인원이 2명 이상일때 나가면 1명으로 바뀌는지, 또 그 방에 들어가면 변화가 없는지
+        3. 방 인원이 3명 이고 처음에 들어온 사람이 나가고 다시 들어오면 player_list 1번 자리에 차는지
+        """
+
+        users_info_test_tournament1 = [
+            {
+                "intra_id": self.room_1_owner_id,
+                "expected_player_number": PlayerNumber.PLAYER_1,
+            },
+            {
+                "intra_id": self.room_1_user1_id,
+                "expected_player_number": PlayerNumber.PLAYER_2,
+            },
+            {
+                "intra_id": self.room_1_user2_id,
+                "expected_player_number": PlayerNumber.PLAYER_3,
+            },
+        ]
+
+        self.test_tournament1_communicators = await self.perform_test_sequence(
+            "test_tournament1", users_info_test_tournament1
+        )
+
+        # 방이 있는지 확인
+        self.assertTrue(ACTIVE_TOURNAMENTS.get("test_tournament1"))
+        # 방에 있는 인원 모두 연결 끊기
+        for communicator in self.test_tournament1_communicators:
+            await communicator.disconnect()
+        # 방이 사라졌는지 확인
+        self.assertFalse(ACTIVE_TOURNAMENTS.get("test_tournament1"))
