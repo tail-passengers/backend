@@ -332,7 +332,6 @@ class TournamentGameConsumer(AsyncWebsocketConsumer):
                 self.group_name_a,
                 {"type": "send.message", "message": wait_detail_json},
             )
-            # TODO 테스트 할때 없는 그룹에게 보냈을때 확인 필요
             await self.channel_layer.group_send(
                 self.group_name_b,
                 {"type": "send.message", "message": wait_detail_json},
