@@ -76,7 +76,7 @@ class Tournament:
 
     def disconnect_tournament(self, intra_id: str) -> None:
         for idx, player in enumerate(self.player_list):
-            if player.get_intra_id() == intra_id:
+            if player is not None and player.get_intra_id() == intra_id:
                 self.player_list[idx] = None
                 self.player_total_cnt -= 1
 
