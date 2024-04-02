@@ -34,4 +34,6 @@ class FriendRequestSerializer(serializers.ModelSerializer):
 class FriendRequestDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model: FriendRequests = FriendRequests
-        fields: tuple[str] = "__all__"
+        fields: tuple[str] = (
+            "status",
+        )
