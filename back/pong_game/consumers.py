@@ -315,7 +315,7 @@ class TournamentGameConsumer(AsyncWebsocketConsumer):
             self.tournament = ACTIVE_TOURNAMENTS.get(self.tournament_name)
         if (
             self.tournament is not None
-            and self.tournament.get_statue() == TournamentStatus.WAIT
+            and self.tournament.get_status() == TournamentStatus.WAIT
         ):
             await self.accept()
             player_number, wait_detail_json = (
@@ -343,7 +343,7 @@ class TournamentGameConsumer(AsyncWebsocketConsumer):
         if not self.user.is_authenticated:
             return
 
-        if self.tournament.get_statue() == TournamentStatus.READY:
+        if self.tournament.get_status() == TournamentStatus.READY:
             return
 
         self.tournament.disconnect_tournament(self.user.intra_id)
