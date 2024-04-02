@@ -76,3 +76,4 @@ class PlayerNumber(Enum):
 class TournamentGroupName(Enum):
     A_TEAM = "a_team"
     B_TEAM = "b_team"
+    FINAL_TEAM = "final_team"
