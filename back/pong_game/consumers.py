@@ -6,8 +6,9 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from accounts.models import Users, UserStatusEnum
 from collections import deque
-from .module.Game import GeneralGame
+from .module.GeneralGame import GeneralGame
 from .module.GameSetValue import (
+    MessageType,
     MAX_SCORE,
     PlayerStatus,
     GameTimeType,
@@ -17,10 +18,10 @@ from .module.GameSetValue import (
     TOURNAMENT_PLAYER_MAX_CNT,
     TournamentGroupName,
 )
-from .module.GameSetValue import MessageType
 from games.serializers import GeneralGameLogsSerializer
 from rest_framework.exceptions import ValidationError
 from .module.Player import Player
+from .module.Round import Round
 from .module.Tournament import Tournament
 from games.models import TournamentGameLogs
 
@@ -382,3 +383,115 @@ class TournamentGameConsumer(AsyncWebsocketConsumer):
                         ),
                     },
                 )
+
+
+class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
+        self.user: Users or None = None
+        self.tournament_name: str = ""
+        self.round_number: int = 0
+        self.round: Round or None = None
+        self.tournament: Tournament or None = None
+        self.game_group_name: str = ""
+        self.game_loop_task: asyncio.Task | None = None
+
+    async def send_message(self, event) -> None:
+        message = event["message"]
+
+        # Send message to WebSocket
+        await self.send(text_data=message)
+
+    async def connect(self) -> None:
+        self.user = self.scope["user"]
+        if self.user.is_authenticated:
+            self.tournament_name = self.scope["url_route"]["kwargs"]["tournament_name"]
+            self.tournament = ACTIVE_TOURNAMENTS.get(self.tournament_name)
+            self.round_number = int(self.scope["url_route"]["kwargs"]["round"])
+            self.round = self.tournament.get_round(self.round_number)
+            self.game_group_name = self.tournament_name + str(self.round)
+            if (
+                self.tournament is not None
+                and self.tournament.get_statue() == TournamentStatus.READY
+                and self.round is not None
+                and self.round.get_player(self.user.intra_id) is not None
+            ):
+                await self.accept()
+                await self.channel_layer.group_add(
+                    self.game_group_name, self.channel_name
+                )
+        else:
+            await self.close()
+
+    async def disconnect(self, code) -> None:
+        if self.user.is_authenticated:
+            await self.channel_layer.group_discard(
+                self.game_group_name, self.channel_name
+            )
+
+    async def receive(self, text_data: json = None, bytes_data=None) -> None:
+        data = json.loads(text_data)
+        message_type = data.get("message_type")
+        if (
+            message_type == MessageType.READY.value
+            and self.tournament.get_statue() == TournamentStatus.READY
+        ):
+            self.round.set_ready(self.user.intra_id)
+            if self.round.is_all_ready():
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {
+                        "type": "send.message",
+                        "message": self.round.build_start_json(),
+                    },
+                )
+                self.round.set_status(PlayerStatus.PLAYING)
+                self.round.set_game_time(GameTimeType.START_TIME.value)
+                self.game_loop_task = asyncio.create_task(
+                    self.send_game_messages_loop(self.round)
+                )
+        return
+
+    async def send_game_messages_loop(self, game: Round) -> None:
+        while True:
+            await asyncio.sleep(1 / 30)
+            if game.get_status() == PlayerStatus.PLAYING:
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {"type": "game.message", "message": game.build_game_json()},
+                )
+            elif game.get_status() == PlayerStatus.SCORE:
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {"type": "game.message", "message": game.build_score_json()},
+                )
+                score1, score2 = game.get_score()
+                if score1 == MAX_SCORE or score2 == MAX_SCORE:
+                    await self.channel_layer.group_send(
+                        self.game_group_name,
+                        {"type": "game.message", "message": game.build_end_json()},
+                    )
+                    game.set_status(PlayerStatus.END)
+                    game.set_game_time(GameTimeType.END_TIME.value)
+                    await self.next_match()
+                    break
+                game.set_status(PlayerStatus.PLAYING)
+
+    async def next_match(self) -> None:
+        if self.round_number == 3:
+            # TODO 마지막 라운드 일 때, 세 라운드 모두 db에 저장하기
+            self.save_game_data_to_db()
+            return
+        round1, round2 = self.tournament.get_round(1), self.tournament.get_round(2)
+        if (
+            round1.get_status() == PlayerStatus.END
+            and round2.get_status() == PlayerStatus.END
+        ):
+            self.tournament.build_tournament_ready_json(
+                TournamentGroupName.FINAL_TEAM, round1.get_winner(), round2.get_winner()
+            )
+
+    @database_sync_to_async
+    def save_game_data_to_db(self) -> None:
+        # TODO 세 라운드 모두 저장하는 로직 추가하기
+        pass
