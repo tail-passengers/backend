@@ -19,6 +19,7 @@ from pong_game.module.GameSetValue import (
     ResultType,
     NOT_ALLOWED_TOURNAMENT_NAME,
     PlayerNumber,
+    TournamentStatus,
 )
 from games.models import GeneralGameLogs
 from pong_game.consumers import ACTIVE_TOURNAMENTS
@@ -674,6 +675,8 @@ class TournamentGameConsumerTests(TestCase):
 
     def __init__(self, methodName: str = ...):
         super().__init__(methodName)
+        self.room_1_name = "test_tournament1"
+        self.room_2_name = "test_tournament2"
         self.room_1_owner_id = "room_1_owner"
         self.room_1_user1_id = "room_1_user1"
         self.room_1_user2_id = "room_1_user2"
@@ -692,6 +695,11 @@ class TournamentGameConsumerTests(TestCase):
     def delete_test_user(self, user):
         # 테스트 사용자 삭제
         user.delete()
+
+    @database_sync_to_async
+    def get_user(self, intra_id: str):
+        # 데이터베이스에서 사용자 상태 조회
+        return Users.objects.get(intra_id=intra_id)
 
     def setUp(self):
         """
@@ -729,6 +737,11 @@ class TournamentGameConsumerTests(TestCase):
         await communicator.send_to(response)
         response_dict = json.loads(response)
         return communicator, response_dict
+
+    async def discard_all_message(self, communicators: list):
+        for communicator in communicators:
+            while await communicator.receive_nothing() is False:
+                message = await communicator.receive_from()
 
     async def perform_test_sequence(
         self, tournament_name: str, users_info: list[dict]
@@ -825,13 +838,13 @@ class TournamentGameConsumerTests(TestCase):
         # 방 1: [Back] 클라이언트에게 wait 전송과 그 값 그대로 [Front] wait 수신하고 Back에게 wait 전송까지
         # wait 값 확인하는 절차도 있음
         self.test_tournament1_communicators = await self.perform_test_sequence(
-            "test_tournament1", users_info_test_tournament1
+            self.room_1_name, users_info_test_tournament1
         )
 
         # 방 2: [Back] 클라이언트에게 wait 전송과 그 값 그대로 [Front] wait 수신하고 Back에게 wait 전송까지
         # wait 값 확인하는 절차도 있음
         self.test_tournament2_communicators = await self.perform_test_sequence(
-            "test_tournament2", users_info_test_tournament2
+            self.room_2_name, users_info_test_tournament2
         )
 
         users_ready_info_test_tournament1 = [
@@ -895,8 +908,6 @@ class TournamentGameConsumerTests(TestCase):
     async def test_disconnect_test1(self):
         """
         1. 방 인원이 3명이고 정상적으로 전부 다 나갔을때 방이 사라지는지(4명 전부 다 있으면 다음 consumer에서 처리해야함)
-        2. 방 인원이 2명 이상일때 나가면 1명으로 바뀌는지, 또 그 방에 들어가면 변화가 없는지
-        3. 방 인원이 3명 이고 처음에 들어온 사람이 나가고 다시 들어오면 player_list 1번 자리에 차는지
         """
 
         users_info_test_tournament1 = [
@@ -915,7 +926,7 @@ class TournamentGameConsumerTests(TestCase):
         ]
 
         self.test_tournament1_communicators = await self.perform_test_sequence(
-            "test_tournament1", users_info_test_tournament1
+            self.room_1_name, users_info_test_tournament1
         )
 
         # 방이 있는지 확인
@@ -925,3 +936,115 @@ class TournamentGameConsumerTests(TestCase):
             await communicator.disconnect()
         # 방이 사라졌는지 확인
         self.assertFalse(ACTIVE_TOURNAMENTS.get("test_tournament1"))
+
+    async def test_disconnect_test2(self):
+        """
+        2. 방 인원이 2명 이상일때 나가면 1명으로 바뀌는지, 또 그 방에 들어가면 변화가 없는지
+        3. 방 인원이 2명 이고 처음에 들어온 사람이 나가고 다시 들어오면 player_list 1번 자리에 차는지
+        """
+        users_info_test_tournament1 = [
+            {
+                "intra_id": self.room_1_owner_id,
+                "expected_player_number": PlayerNumber.PLAYER_1,
+            },
+            {
+                "intra_id": self.room_1_user1_id,
+                "expected_player_number": PlayerNumber.PLAYER_2,
+            },
+        ]
+
+        # 두 명 참가
+        self.test_tournament1_communicators = await self.perform_test_sequence(
+            self.room_1_name, users_info_test_tournament1
+        )
+
+        tournament = ACTIVE_TOURNAMENTS.get(self.room_1_name)
+
+        # 방이 있는지 확인
+        self.assertTrue(ACTIVE_TOURNAMENTS.get(self.room_1_name))
+
+        # 두 명 중 한명만 끊기
+        await self.test_tournament1_communicators[0].disconnect()
+
+        # 방이 안 사라졌는지 확인
+        self.assertTrue(ACTIVE_TOURNAMENTS.get(self.room_1_name))
+        tournament = ACTIVE_TOURNAMENTS.get(self.room_1_name)
+        self.assertEqual(tournament.tournament_name, self.room_1_name)
+        self.assertEqual(tournament.player_list[0], None)
+        self.assertEqual(tournament.player_list[1].get_intra_id(), self.room_1_user1_id)
+        self.assertEqual(tournament.player_total_cnt, 1)
+
+        # 다시 연결 및 입장
+        communicator, response_dict = await self.connect_and_echo_data(
+            tournament_name=self.room_1_name,
+            user=await self.get_user(self.room_1_owner_id),
+        )
+        # 남는 메세지 버리기
+        await self.discard_all_message(
+            communicators=self.test_tournament1_communicators
+        )
+        # 다시 연결 된 방 첫번째 자리에 잘 들어 갔는지 확인
+        tournament = ACTIVE_TOURNAMENTS.get(self.room_1_name)
+        self.assertEqual(tournament.tournament_name, self.room_1_name)
+        self.assertEqual(tournament.player_list[0].get_intra_id(), self.room_1_owner_id)
+        self.assertEqual(tournament.player_list[1].get_intra_id(), self.room_1_user1_id)
+        self.assertEqual(tournament.player_total_cnt, 2)
+
+        # room1에 세번째 유저 참가
+        communicator, response_dict = await self.connect_and_echo_data(
+            tournament_name=self.room_1_name,
+            user=await self.create_test_user(intra_id=self.room_1_user2_id),
+        )
+
+        # 남는 메세지 버리기
+        await self.discard_all_message(
+            communicators=self.test_tournament1_communicators
+        )
+        # 세번째 유저가 방에 잘 들어갔는지 확인
+        tournament = ACTIVE_TOURNAMENTS.get(self.room_1_name)
+        self.assertEqual(tournament.tournament_name, self.room_1_name)
+        self.assertEqual(tournament.player_list[0].get_intra_id(), self.room_1_owner_id)
+        self.assertEqual(tournament.player_list[1].get_intra_id(), self.room_1_user1_id)
+        self.assertEqual(tournament.player_list[2].get_intra_id(), self.room_1_user2_id)
+        self.assertEqual(tournament.player_total_cnt, 3)
+
+    async def test_overflow_user_connection_test(self):
+        """
+        full방일때 접속 요청하면 close 되는지 확인 테스트
+        """
+        users_info_test_tournament1 = [
+            {
+                "intra_id": self.room_1_owner_id,
+                "expected_player_number": PlayerNumber.PLAYER_1,
+            },
+            {
+                "intra_id": self.room_1_user1_id,
+                "expected_player_number": PlayerNumber.PLAYER_2,
+            },
+            {
+                "intra_id": self.room_1_user2_id,
+                "expected_player_number": PlayerNumber.PLAYER_3,
+            },
+            {
+                "intra_id": self.room_1_user3_id,
+                "expected_player_number": PlayerNumber.PLAYER_4,
+            },
+        ]
+
+        self.test_tournament1_communicators = await self.perform_test_sequence(
+            self.room_1_name, users_info_test_tournament1
+        )
+        # 모든 메세지 버리기
+        await self.discard_all_message(self.test_tournament1_communicators)
+
+        # 새로운 유저가 full 방 참가 요청
+        communicator = WebsocketCommunicator(
+            application, f"/ws/tournament_game/{self.room_1_name}/"
+        )
+        user = await self.create_test_user(intra_id="other_user")
+        communicator.scope["user"] = user
+        connected, _ = await communicator.connect()
+        tournament = ACTIVE_TOURNAMENTS.get(self.room_1_name)
+        self.assertEqual(tournament.status, TournamentStatus.READY)
+        # 거부 하는지 확인
+        self.assertFalse(connected)
