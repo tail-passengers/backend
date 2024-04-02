@@ -89,7 +89,7 @@ class Tournament:
 
         return True
 
-    def get_statue(self) -> TournamentStatus:
+    def get_status(self) -> TournamentStatus:
         return self.status
 
     def get_player_total_cnt(self) -> int:
