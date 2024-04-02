@@ -698,7 +698,7 @@ class TournamentGameConsumerTests(TestCase):
 
     @database_sync_to_async
     def get_user(self, intra_id: str):
-        # 데이터베이스에서 사용자 상태 조회
+        # 데이터베이스에서 사용자 조회
         return Users.objects.get(intra_id=intra_id)
 
     def setUp(self):
