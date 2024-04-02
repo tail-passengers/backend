@@ -130,7 +130,10 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
         response = super().partial_update(request, *args, **kwargs)
 
         if previous_image and request.data.get("profile_image") is not None:
-            os.remove(os.path.join(settings.MEDIA_ROOT, previous_image.name))
+            try:
+                os.remove(os.path.join(settings.MEDIA_ROOT, previous_image.name))
+            except FileNotFoundError:
+                pass
         return response
 
 
