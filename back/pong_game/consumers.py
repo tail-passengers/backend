@@ -129,8 +129,14 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code) -> None:
         if self.user.is_authenticated:
-            if self.game_id in ACTIVE_GENERAL_GAMES.keys():
+            game = ACTIVE_GENERAL_GAMES.get(self.game_id)
+            if game:
                 ACTIVE_GENERAL_GAMES.pop(self.game_id)
+                if game.get_status() != PlayerStatus.END:  # 게임 중간에 나갔을 경우
+                    data = game.build_error_json(self.user.intra_id)
+                    await self.channel_layer.group_send(
+                        self.game_group_name, {"type": "game.message", "message": data}
+                    )
                 self.game_loop_task.cancel()
                 try:  # cancel() 동작이 끝날 때까지 대기
                     await self.game_loop_task
@@ -409,10 +415,10 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
             self.tournament = ACTIVE_TOURNAMENTS.get(self.tournament_name)
             self.round_number = int(self.scope["url_route"]["kwargs"]["round"])
             self.round = self.tournament.get_round(self.round_number)
-            self.game_group_name = self.tournament_name + str(self.round)
+            self.game_group_name = self.tournament_name + str(self.round_number)
             if (
                 self.tournament is not None
-                and self.tournament.get_statue() == TournamentStatus.READY
+                and self.tournament.get_status() == TournamentStatus.READY
                 and self.round is not None
                 and self.round.get_player(self.user.intra_id) is not None
             ):
@@ -425,6 +431,28 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, code) -> None:
         if self.user.is_authenticated:
+            if self.tournament_name in ACTIVE_TOURNAMENTS.keys():
+                ACTIVE_TOURNAMENTS.pop(self.tournament_name)
+                if self.tournament.get_status() != TournamentStatus.END:
+                    self.tournament.set_status(TournamentStatus.END)
+                    data = self.round.build_error_json(self.user.intra_id)
+                    await self.channel_layer.group_send(
+                        self.game_group_name, {"type": "game.message", "message": data}
+                    )
+                    if self.round_number != 3:
+                        another_game = 2 if self.round_number == 1 else 1
+                        await self.channel_layer.group_send(
+                            self.tournament_name + str(another_game),
+                            {
+                                "type": "game.message",
+                                "message": data,
+                            },
+                        )
+                self.game_loop_task.cancel()
+                try:  # cancel() 동작이 끝날 때까지 대기
+                    await self.game_loop_task
+                except asyncio.CancelledError:
+                    pass  # task가 이미 취소된 경우
             await self.channel_layer.group_discard(
                 self.game_group_name, self.channel_name
             )
@@ -434,7 +462,7 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
         message_type = data.get("message_type")
         if (
             message_type == MessageType.READY.value
-            and self.tournament.get_statue() == TournamentStatus.READY
+            and self.tournament.get_status() == TournamentStatus.READY
         ):
             self.round.set_ready(self.user.intra_id)
             if self.round.is_all_ready():
@@ -479,19 +507,40 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
 
     async def next_match(self) -> None:
         if self.round_number == 3:
-            # TODO 마지막 라운드 일 때, 세 라운드 모두 db에 저장하기
-            self.save_game_data_to_db()
-            return
-        round1, round2 = self.tournament.get_round(1), self.tournament.get_round(2)
-        if (
-            round1.get_status() == PlayerStatus.END
-            and round2.get_status() == PlayerStatus.END
-        ):
-            self.tournament.build_tournament_ready_json(
-                TournamentGroupName.FINAL_TEAM, round1.get_winner(), round2.get_winner()
-            )
+            self.tournament.set_status(TournamentStatus.END)
+            try:
+                self.save_game_data_to_db()
+                await self.send(
+                    json.dumps(
+                        {
+                            "message_type": MessageType.COMPLETE.value,
+                        }
+                    )
+                )
+            except ValidationError:
+                await self.send(
+                    json.dumps(
+                        {
+                            "message_type": MessageType.ERROR.value,
+                        }
+                    )
+                )
+        else:
+            round1, round2 = self.tournament.get_round(1), self.tournament.get_round(2)
+            if (
+                round1.get_status() == PlayerStatus.END
+                and round2.get_status() == PlayerStatus.END
+            ):
+                self.tournament.build_tournament_ready_json(
+                    TournamentGroupName.FINAL_TEAM,
+                    round1.get_winner(),
+                    round2.get_winner(),
+                )
 
     @database_sync_to_async
     def save_game_data_to_db(self) -> None:
-        # TODO 세 라운드 모두 저장하는 로직 추가하기
-        pass
+        for i in range(1, 4):
+            round_i = self.tournament.get_round(i)
+            serializer = GeneralGameLogsSerializer(data=round_i.get_db_data())
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
