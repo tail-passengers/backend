@@ -41,6 +41,7 @@ class MessageType(Enum):
     END = "end"
     COMPLETE = "complete"
     ERROR = "error"
+    STAY = "stay"
 
 
 class GameTimeType(Enum):
@@ -76,3 +77,4 @@ class PlayerNumber(Enum):
 class TournamentGroupName(Enum):
     A_TEAM = "a_team"
     B_TEAM = "b_team"
+    FINAL_TEAM = "final_team"
