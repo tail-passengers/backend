@@ -427,7 +427,7 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
             self.round_number = int(self.scope["url_route"]["kwargs"]["round"])
             self.round = self.tournament.get_round(self.round_number)
             self.game_group_name = self.tournament_name + str(self.round_number)
-            self.tournament_broadcast = self.tournament_name + "error"
+            self.tournament_broadcast = self.tournament_name + "broadcast"
             if (
                 self.tournament is not None
                 and self.tournament.get_status() == TournamentStatus.READY
