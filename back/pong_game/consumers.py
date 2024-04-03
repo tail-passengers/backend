@@ -18,7 +18,7 @@ from .module.GameSetValue import (
     TOURNAMENT_PLAYER_MAX_CNT,
     TournamentGroupName,
 )
-from games.serializers import GeneralGameLogsSerializer
+from games.serializers import GeneralGameLogsSerializer, TournamentGameLogsSerializer
 from rest_framework.exceptions import ValidationError
 from .module.Player import Player
 from .module.Round import Round
@@ -400,13 +400,24 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
         self.round: Round or None = None
         self.tournament: Tournament or None = None
         self.game_group_name: str = ""
+        self.tournament_broadcast: str = ""
         self.game_loop_task: asyncio.Task | None = None
 
-    async def send_message(self, event) -> None:
+    async def game_message(self, event) -> None:
         message = event["message"]
 
         # Send message to WebSocket
         await self.send(text_data=message)
+
+    async def diff_game_message(self, event) -> None:
+        stay_message = event["stay_message"]
+        end_message = event["end_message"]
+
+        # Send message to WebSocket
+        if self.user.intra_id == self.round.get_winner():
+            await self.send(text_data=stay_message)
+        else:
+            await self.send(text_data=end_message)
 
     async def connect(self) -> None:
         self.user = self.scope["user"]
@@ -416,6 +427,7 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
             self.round_number = int(self.scope["url_route"]["kwargs"]["round"])
             self.round = self.tournament.get_round(self.round_number)
             self.game_group_name = self.tournament_name + str(self.round_number)
+            self.tournament_broadcast = self.tournament_name + "error"
             if (
                 self.tournament is not None
                 and self.tournament.get_status() == TournamentStatus.READY
@@ -423,6 +435,9 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                 and self.round.get_player(self.user.intra_id) is not None
             ):
                 await self.accept()
+                await self.channel_layer.group_add(
+                    self.tournament_broadcast, self.channel_name
+                )
                 await self.channel_layer.group_add(
                     self.game_group_name, self.channel_name
                 )
@@ -433,26 +448,24 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
         if self.user.is_authenticated:
             if self.tournament_name in ACTIVE_TOURNAMENTS.keys():
                 ACTIVE_TOURNAMENTS.pop(self.tournament_name)
-                if self.tournament.get_status() != TournamentStatus.END:
+                if (
+                    self.tournament.get_status() != TournamentStatus.END
+                    and self.round.get_status() != PlayerStatus.END
+                ):
                     self.tournament.set_status(TournamentStatus.END)
                     data = self.round.build_error_json(self.user.intra_id)
                     await self.channel_layer.group_send(
-                        self.game_group_name, {"type": "game.message", "message": data}
+                        self.tournament_broadcast,
+                        {"type": "game.message", "message": data},
                     )
-                    if self.round_number != 3:
-                        another_game = 2 if self.round_number == 1 else 1
-                        await self.channel_layer.group_send(
-                            self.tournament_name + str(another_game),
-                            {
-                                "type": "game.message",
-                                "message": data,
-                            },
-                        )
                 self.game_loop_task.cancel()
                 try:  # cancel() 동작이 끝날 때까지 대기
                     await self.game_loop_task
                 except asyncio.CancelledError:
                     pass  # task가 이미 취소된 경우
+            await self.channel_layer.group_discard(
+                self.tournament_broadcast, self.channel_name
+            )
             await self.channel_layer.group_discard(
                 self.game_group_name, self.channel_name
             )
@@ -469,7 +482,7 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                 await self.channel_layer.group_send(
                     self.game_group_name,
                     {
-                        "type": "send.message",
+                        "type": "game.message",
                         "message": self.round.build_start_json(),
                     },
                 )
@@ -479,7 +492,16 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                 self.game_loop_task = asyncio.create_task(
                     self.send_game_messages_loop(self.round)
                 )
-        return
+        elif (
+            data["message_type"] == MessageType.PLAYING.value
+            and self.round.get_status() == PlayerStatus.PLAYING
+        ):
+            self.round.key_input(text_data)
+        elif (
+            data["message_type"] == MessageType.STAY.value
+            and self.round.get_status() == PlayerStatus.END
+        ):
+            await self.next_match()
 
     async def send_game_messages_loop(self, game: Round) -> None:
         while True:
@@ -498,11 +520,14 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                 if score1 == MAX_SCORE or score2 == MAX_SCORE:
                     await self.channel_layer.group_send(
                         self.game_group_name,
-                        {"type": "game.message", "message": game.build_end_json()},
+                        {
+                            "type": "diff.game.message",
+                            "end_message": game.build_end_json(),
+                            "stay_message": game.build_stay_json(),
+                        },
                     )
                     game.set_status(PlayerStatus.END)
                     game.set_game_time(GameTimeType.END_TIME.value)
-                    await self.next_match()
                     break
                 game.set_status(PlayerStatus.PLAYING)
 
@@ -511,20 +536,22 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
             self.tournament.set_status(TournamentStatus.END)
             try:
                 self.save_game_data_to_db()
-                await self.send(
+                await self.channel_layer.group_send(
+                    self.tournament_broadcast,
                     json.dumps(
                         {
                             "message_type": MessageType.COMPLETE.value,
                         }
-                    )
+                    ),
                 )
             except ValidationError:
-                await self.send(
+                await self.channel_layer.group_send(
+                    self.tournament_broadcast,
                     json.dumps(
                         {
                             "message_type": MessageType.ERROR.value,
                         }
-                    )
+                    ),
                 )
         else:
             round1, round2 = self.tournament.get_round(1), self.tournament.get_round(2)
@@ -532,16 +559,22 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                 round1.get_status() == PlayerStatus.END
                 and round2.get_status() == PlayerStatus.END
             ):
-                self.tournament.build_tournament_ready_json(
-                    TournamentGroupName.FINAL_TEAM,
-                    round1.get_winner(),
-                    round2.get_winner(),
+                self.channel_layer.group_send(
+                    self.tournament_broadcast,
+                    {
+                        "type": "game.message",
+                        "message": self.tournament.build_tournament_ready_json(
+                            TournamentGroupName.FINAL_TEAM,
+                            round1.get_winner(),
+                            round2.get_winner(),
+                        ),
+                    },
                 )
 
     @database_sync_to_async
     def save_game_data_to_db(self) -> None:
         for i in range(1, 4):
             round_i = self.tournament.get_round(i)
-            serializer = GeneralGameLogsSerializer(data=round_i.get_db_data())
+            serializer = TournamentGameLogsSerializer(data=round_i.get_db_data())
             if serializer.is_valid(raise_exception=True):
                 serializer.save()

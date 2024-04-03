@@ -41,6 +41,7 @@ class MessageType(Enum):
     END = "end"
     COMPLETE = "complete"
     ERROR = "error"
+    STAY = "stay"
 
 
 class GameTimeType(Enum):

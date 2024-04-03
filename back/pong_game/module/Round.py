@@ -36,6 +36,24 @@ class Round(GeneralGame):
             "loser": self.loser,
         }
 
+    def build_stay_json(self) -> json:
+        self.winner = (
+            self.player1.get_intra_id()
+            if self.score1 > self.score2
+            else self.player2.get_intra_id()
+        )
+        self.loser = (
+            self.player2.get_intra_id()
+            if self.score1 > self.score2
+            else self.player1.get_intra_id()
+        )
+        return {
+            "message_type": MessageType.STAY.value,
+            "round": self.round_number.value,
+            "winner": self.winner,
+            "loser": self.loser,
+        }
+
     def get_winner(self) -> str:
         return self.winner
 
