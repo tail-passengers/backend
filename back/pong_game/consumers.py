@@ -474,6 +474,7 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                     },
                 )
                 self.round.set_status(PlayerStatus.PLAYING)
+                self.tournament.set_status(TournamentStatus.PLAYING)
                 self.round.set_game_time(GameTimeType.START_TIME.value)
                 self.game_loop_task = asyncio.create_task(
                     self.send_game_messages_loop(self.round)
