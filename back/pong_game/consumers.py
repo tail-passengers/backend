@@ -395,13 +395,14 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
         self.user: Users or None = None
-        self.tournament_name: str = ""
-        self.round_number: int = 0
-        self.round: Round or None = None
-        self.tournament: Tournament or None = None
-        self.game_group_name: str = ""
-        self.tournament_broadcast: str = ""
-        self.game_loop_task: asyncio.Task | None = None
+        self.tournament_name: str = ""  # 토너먼트 이름
+        self.tournament: Tournament or None = None  # 현재 토너먼트 객체
+        self.round_number: int = 0  # 현재 라운드
+        self.round: Round or None = None  # 현재 라운드 객체
+        self.game_group_name: str = ""  # 현재 게임 그룹 채널 이름
+        self.tournament_broadcast: str = ""  # 현재 토너먼트 전체 채널 이름
+        self.winner_group: str = ""  # 1,2라운드 승자 채널 이름
+        self.game_loop_task: asyncio.Task | None = None  # 게임 루프
 
     async def game_message(self, event) -> None:
         message = event["message"]
@@ -426,8 +427,8 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
             self.tournament = ACTIVE_TOURNAMENTS.get(self.tournament_name)
             self.round_number = int(self.scope["url_route"]["kwargs"]["round"])
             self.round = self.tournament.get_round(self.round_number)
-            self.game_group_name = self.tournament_name + str(self.round_number)
-            self.tournament_broadcast = self.tournament_name + "broadcast"
+            self.game_group_name = self.tournament_name + "_" + str(self.round_number)
+            self.tournament_broadcast = self.tournament_name + "_broadcast"
             if (
                 self.tournament is not None
                 and self.tournament.get_status() == TournamentStatus.READY
@@ -475,6 +476,9 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
             self.tournament_broadcast, self.channel_name
         )
         await self.channel_layer.group_discard(self.game_group_name, self.channel_name)
+        # 승자 그룹이 지정되어 채널에 들어가 있을 때
+        if self.winner_group:
+            await self.channel_layer.group_discard(self.winner_group, self.channel_name)
 
     async def receive(self, text_data: json = None, bytes_data=None) -> None:
         data = json.loads(text_data)
@@ -561,12 +565,14 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                 )
         else:
             round1, round2 = self.tournament.get_round(1), self.tournament.get_round(2)
+            self.winner_group = self.tournament_name + "_winner"
+            self.channel_layer.group_add(self.winner_group, self.channel_name)
             if (
                 round1.get_status() == PlayerStatus.END
                 and round2.get_status() == PlayerStatus.END
             ):
                 self.channel_layer.group_send(
-                    self.tournament_broadcast,
+                    self.winner_group,
                     {
                         "type": "game.message",
                         "message": self.tournament.build_tournament_ready_json(
