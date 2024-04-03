@@ -11,6 +11,7 @@ class Round(GeneralGame):
         self.round_number: RoundNumber = round_number
         self.winner: str = ""
         self.loser: str = ""
+        self.is_closed: bool = False
 
     def build_start_json(self) -> json:
         return {
@@ -57,8 +58,14 @@ class Round(GeneralGame):
     def get_winner(self) -> str:
         return self.winner
 
+    def get_is_closed(self) -> bool:
+        return self.is_closed
+
     def set_ready(self, intra_id: str) -> None:
         if intra_id == self.player1.get_intra_id():
             self.player1.set_status(PlayerStatus.READY)
         elif intra_id == self.player2.get_intra_id():
             self.player2.set_status(PlayerStatus.READY)
+
+    def set_is_closed(self, is_closed: bool) -> None:
+        self.is_closed = is_closed

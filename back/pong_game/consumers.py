@@ -445,30 +445,36 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
             await self.close()
 
     async def disconnect(self, code) -> None:
-        if self.user.is_authenticated:
-            if self.tournament_name in ACTIVE_TOURNAMENTS.keys():
+        if not self.user.is_authenticated:
+            return
+
+        # 게임이 비정상 종료 되었을 때
+        if self.round.get_status() != PlayerStatus.END:
+            self.tournament.set_status(TournamentStatus.END)
+            data = self.round.build_error_json(self.user.intra_id)
+            await self.channel_layer.group_send(
+                self.tournament_broadcast,
+                {"type": "game.message", "message": data},
+            )
+
+        # 각 라운드의 loop가 아직 취소되지 않은 경우
+        if not self.round.get_is_closed():
+            self.round.set_is_closed(True)
+            # 토너먼트가 종료되었을 때
+            if (
+                self.tournament.get_status() == TournamentStatus.END
+                and self.tournament_name in ACTIVE_TOURNAMENTS.keys()
+            ):
                 ACTIVE_TOURNAMENTS.pop(self.tournament_name)
-                if (
-                    self.tournament.get_status() != TournamentStatus.END
-                    and self.round.get_status() != PlayerStatus.END
-                ):
-                    self.tournament.set_status(TournamentStatus.END)
-                    data = self.round.build_error_json(self.user.intra_id)
-                    await self.channel_layer.group_send(
-                        self.tournament_broadcast,
-                        {"type": "game.message", "message": data},
-                    )
-                self.game_loop_task.cancel()
-                try:  # cancel() 동작이 끝날 때까지 대기
-                    await self.game_loop_task
-                except asyncio.CancelledError:
-                    pass  # task가 이미 취소된 경우
-            await self.channel_layer.group_discard(
-                self.tournament_broadcast, self.channel_name
-            )
-            await self.channel_layer.group_discard(
-                self.game_group_name, self.channel_name
-            )
+            self.game_loop_task.cancel()
+            try:  # cancel() 동작이 끝날 때까지 대기
+                await self.game_loop_task
+            except asyncio.CancelledError:
+                pass  # task가 이미 취소된 경우
+        await self.channel_layer.group_discard(
+            self.tournament_broadcast, self.channel_name
+        )
+        await self.channel_layer.group_discard(self.game_group_name, self.channel_name)
 
     async def receive(self, text_data: json = None, bytes_data=None) -> None:
         data = json.loads(text_data)
