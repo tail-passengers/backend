@@ -127,6 +127,16 @@ class Tournament:
     def get_round(self, round_number: int) -> Round:
         return self.round_list[round_number - 1]
 
+    def get_db_datas(self, round_number: int) -> dict:
+        db_data = self.round_list[round_number - 1].get_db_data()
+        db_data["tournament_name"] = self.tournament_name
+        db_data["round"] = round_number
+        db_data["is_final"] = round_number == 3
+        return db_data
+
+    def set_status(self, status: TournamentStatus) -> None:
+        self.status = status
+
     def try_set_ready(self, player_number: str, intra_id: str) -> bool:
         player_numbers = [player.value for player in PlayerNumber]
         idx = player_numbers.index(player_number)
