@@ -126,6 +126,15 @@ class GeneralGame:
             }
         )
 
+    def build_error_json(self, intra_id: str) -> json:
+        self.status = PlayerStatus.END
+        return json.dumps(
+            {
+                "message_type": MessageType.ERROR.value,
+                "intra_id": intra_id,
+            }
+        )
+
     def _move_paddle(self) -> None:
         self.player1.get_paddle().move_handler(player_num=1)
         self.player2.get_paddle().move_handler(player_num=2)
