@@ -14,7 +14,7 @@ websocket_urlpatterns = [
         consumers.TournamentGameConsumer.as_asgi(),
     ),
     path(
-        "ws/tournament_game/<str:tournament_name>/<int:round>",
+        "ws/tournament_game/<str:tournament_name>/<int:round>/",
         consumers.TournamentGameRoundConsumer.as_asgi(),
     ),
 ]
