@@ -1339,6 +1339,8 @@ class TournamentGameRoundConsumerTests(TestCase):
             )
         )
 
+        print("\n\n=============Round 1=============\n")
+
         while True:
             user1_response = await self.test_tournament1_communicators[0].receive_from()
             user1_dict = json.loads(user1_response)
@@ -1358,6 +1360,8 @@ class TournamentGameRoundConsumerTests(TestCase):
                 or user2_dict["message_type"] == "stay"
             ):
                 break
+
+        print("\n\n=============Round 2=============\n")
 
         while True:
             user3_response = await self.test_tournament1_communicators[2].receive_from()
@@ -1439,6 +1443,34 @@ class TournamentGameRoundConsumerTests(TestCase):
             )
         )
 
+        print("\n\n=============Round 3=============\n")
+
+        await self.test_tournament1_communicators[1].send_to(
+            text_data=json.dumps(
+                {"message_type": "playing", "number": "player1", "input": "left_press"}
+            )
+        )
+
+        while True:
+            user2_response = await self.test_tournament1_communicators[1].receive_from()
+            user2_dict = json.loads(user2_response)
+            print(user2_dict)
+            if (
+                user2_dict["message_type"] == "end"
+                or user2_dict["message_type"] == "stay"
+            ):
+                break
+
+        while True:
+            user4_response = await self.test_tournament1_communicators[3].receive_from()
+            user4_dict = json.loads(user4_response)
+            print(user4_dict)
+            if (
+                user4_dict["message_type"] == "end"
+                or user4_dict["message_type"] == "stay"
+            ):
+                break
+
         await self.discard_all_message(self.test_tournament1_communicators)
         await self.test_tournament1_communicators[0].send_to(
             json.dumps(
@@ -1450,6 +1482,8 @@ class TournamentGameRoundConsumerTests(TestCase):
                 }
             )
         )
+
+        print("\n\n=============Save DB=============\n")
 
         a = await self.wait_for_tournament_data(
             tournamnet_name=self.room_1_name, round=1
