@@ -14,10 +14,12 @@ class Round(GeneralGame):
         self.is_closed: bool = False
 
     def build_start_json(self) -> json:
-        return {
-            "message_type": MessageType.START.value,
-            "round": self.round_number.value,
-        }
+        return json.dumps(
+            {
+                "message_type": MessageType.START.value,
+                "round": self.round_number.value,
+            }
+        )
 
     def build_end_json(self) -> json:
         self.winner = (
@@ -30,12 +32,14 @@ class Round(GeneralGame):
             if self.score1 > self.score2
             else self.player1.get_intra_id()
         )
-        return {
-            "message_type": MessageType.END.value,
-            "round": self.round_number.value,
-            "winner": self.winner,
-            "loser": self.loser,
-        }
+        return json.dumps(
+            {
+                "message_type": MessageType.END.value,
+                "round": self.round_number.value,
+                "winner": self.winner,
+                "loser": self.loser,
+            }
+        )
 
     def build_stay_json(self) -> json:
         self.winner = (
@@ -48,12 +52,14 @@ class Round(GeneralGame):
             if self.score1 > self.score2
             else self.player1.get_intra_id()
         )
-        return {
-            "message_type": MessageType.STAY.value,
-            "round": self.round_number.value,
-            "winner": self.winner,
-            "loser": self.loser,
-        }
+        return json.dumps(
+            {
+                "message_type": MessageType.STAY.value,
+                "round": self.round_number.value,
+                "winner": self.winner,
+                "loser": self.loser,
+            }
+        )
 
     def get_winner(self) -> str:
         return self.winner
