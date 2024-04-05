@@ -107,11 +107,16 @@ class Tournament:
                 }
             )
 
-    def disconnect_tournament(self, intra_id: str) -> None:
+    def disconnect_tournament(self, intra_id: str) -> json:
+        data = {"message_type": MessageType.WAIT.value}
         for idx, player in enumerate(self.player_list):
             if player is not None and player.get_intra_id() == intra_id:
                 self.player_list[idx] = None
                 self.player_total_cnt -= 1
+                data["intra_id"] = intra_id
+                data["total"] = self.player_total_cnt
+                data["number"] = list(PlayerNumber)[idx].value
+        return json.dumps(data)
 
     def is_all_ready(self) -> bool:
         for player in self.player_list:
