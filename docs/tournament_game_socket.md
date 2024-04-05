@@ -85,7 +85,7 @@
 
 ```json
 {
-    "message_type": "error",
+    "message_type": "wait",
     "intra_id": "{접속 종료한 intra_id}",
     "total": "{join_player_num}",
     "number": "{player1 / player2 / player3 / player4}"

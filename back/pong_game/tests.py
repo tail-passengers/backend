@@ -1174,7 +1174,6 @@ class TournamentGameRoundConsumerTests(TestCase):
         for idx, communicator in enumerate(communicators):
             while await communicator.receive_nothing() is False:
                 message = await communicator.receive_from()
-                print(f"idx={idx}, discard={message}")
 
     async def perform_test_sequence(
         self, tournament_name: str, users_info: list[dict]
@@ -1339,12 +1338,9 @@ class TournamentGameRoundConsumerTests(TestCase):
             )
         )
 
-        print("\n\n=============Round 1=============\n")
-
         while True:
             user1_response = await self.test_tournament1_communicators[0].receive_from()
             user1_dict = json.loads(user1_response)
-            print(user1_dict)
             if (
                 user1_dict["message_type"] == "end"
                 or user1_dict["message_type"] == "stay"
@@ -1354,19 +1350,15 @@ class TournamentGameRoundConsumerTests(TestCase):
         while True:
             user2_response = await self.test_tournament1_communicators[1].receive_from()
             user2_dict = json.loads(user2_response)
-            print(user2_dict)
             if (
                 user2_dict["message_type"] == "end"
                 or user2_dict["message_type"] == "stay"
             ):
                 break
 
-        print("\n\n=============Round 2=============\n")
-
         while True:
             user3_response = await self.test_tournament1_communicators[2].receive_from()
             user3_dict = json.loads(user3_response)
-            print(user3_dict)
             if (
                 user3_dict["message_type"] == "end"
                 or user3_dict["message_type"] == "stay"
@@ -1376,7 +1368,6 @@ class TournamentGameRoundConsumerTests(TestCase):
         while True:
             user4_response = await self.test_tournament1_communicators[3].receive_from()
             user4_dict = json.loads(user4_response)
-            print(user4_dict)
             if (
                 user4_dict["message_type"] == "end"
                 or user4_dict["message_type"] == "stay"
@@ -1407,14 +1398,13 @@ class TournamentGameRoundConsumerTests(TestCase):
             )
         )
 
-        # await self.discard_all_message(self.test_tournament1_communicators)
+        await self.discard_all_message(self.test_tournament1_communicators)
 
         # 연결 끊기
         for communicator in self.test_tournament1_communicators:
             await communicator.disconnect()
 
         self.test_tournament1_communicators = []
-
         self.test_tournament1_communicators.append(
             await self.connect_and_send_ready_data(
                 tournament_name=self.room_1_name,
@@ -1443,18 +1433,18 @@ class TournamentGameRoundConsumerTests(TestCase):
             )
         )
 
-        print("\n\n=============Round 3=============\n")
+        await self.test_tournament1_communicators[0].receive_from()
+        await self.test_tournament1_communicators[1].receive_from()
 
-        await self.test_tournament1_communicators[1].send_to(
+        await self.test_tournament1_communicators[0].send_to(
             text_data=json.dumps(
                 {"message_type": "playing", "number": "player1", "input": "left_press"}
             )
         )
 
         while True:
-            user2_response = await self.test_tournament1_communicators[1].receive_from()
+            user2_response = await self.test_tournament1_communicators[0].receive_from()
             user2_dict = json.loads(user2_response)
-            print(user2_dict)
             if (
                 user2_dict["message_type"] == "end"
                 or user2_dict["message_type"] == "stay"
@@ -1462,9 +1452,8 @@ class TournamentGameRoundConsumerTests(TestCase):
                 break
 
         while True:
-            user4_response = await self.test_tournament1_communicators[3].receive_from()
+            user4_response = await self.test_tournament1_communicators[1].receive_from()
             user4_dict = json.loads(user4_response)
-            print(user4_dict)
             if (
                 user4_dict["message_type"] == "end"
                 or user4_dict["message_type"] == "stay"
@@ -1483,18 +1472,7 @@ class TournamentGameRoundConsumerTests(TestCase):
             )
         )
 
-        print("\n\n=============Save DB=============\n")
-
-        a = await self.wait_for_tournament_data(
-            tournamnet_name=self.room_1_name, round=1
-        )
-        print(a.__dict__)
-        a = await self.wait_for_tournament_data(
-            tournamnet_name=self.room_1_name, round=2
-        )
-        print(a.__dict__)
-        a = await self.wait_for_tournament_data(
-            tournamnet_name=self.room_1_name, round=3
-        )
-        print(a.__dict__)
+        await self.wait_for_tournament_data(tournamnet_name=self.room_1_name, round=1)
+        await self.wait_for_tournament_data(tournamnet_name=self.room_1_name, round=2)
+        await self.wait_for_tournament_data(tournamnet_name=self.room_1_name, round=3)
         await self.discard_all_message(self.test_tournament1_communicators)
