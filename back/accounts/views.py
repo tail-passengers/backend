@@ -199,6 +199,8 @@ class CallbackAPIView(APIView):
             user_instance.save()
         # login
         login(request, user_instance)
+        user_instance.is_active = True
+        user_instance.save()
         return redirect(BASE_FULL_IP)
 
     def _get_access_token(self, request) -> str:
@@ -222,6 +224,11 @@ class CallbackAPIView(APIView):
 
 
 def logout_view(request) -> redirect:
+    if request.user.is_authenticated:
+        user_instance = request.user
+        user_instance.is_active = False
+        user_instance.save()
+
     logout(request)
     return redirect(BASE_FULL_IP)
 
@@ -265,6 +272,8 @@ class TestAccountLogin(APIView):
         try:
             user_instance = Users.objects.get(intra_id=kwargs["intra_id"])
             if user_instance.is_test_user:
+                user_instance.is_active = True
+                user_instance.save()
                 login(request, user_instance)
             else:
                 print("Error: 허용 되지 않은 유저입니다.")
