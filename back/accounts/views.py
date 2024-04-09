@@ -21,6 +21,8 @@ HOUSE = {
     "Gon": HouseEnum.SLYTHERIN,
 }
 
+BASE_FULL_IP = f"https://{os.environ.get('BASE_IP')}/"
+
 
 # https://squirmm.tistory.com/entry/Django-DRF-Method-Override-%EB%B0%A9%EB%B2%95
 class UsersViewSet(viewsets.ModelViewSet):
@@ -140,7 +142,7 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
 class Login42APIView(APIView):
     def get(self, request, *args, **kwargs) -> redirect:
         if request.user.is_authenticated:
-            return redirect("https://127.0.0.1/")
+            return redirect(BASE_FULL_IP)
 
         client_id = os.environ.get("CLIENT_ID")
         response_type = "code"
@@ -156,7 +158,7 @@ class Login42APIView(APIView):
 class CallbackAPIView(APIView):
     def get(self, request, *args, **kwargs) -> redirect:
         if request.user.is_authenticated:
-            return redirect("https://127.0.0.1/")
+            return redirect(BASE_FULL_IP)
 
         if request.session.get("state") and not request.GET.get(
             "state"
@@ -171,7 +173,7 @@ class CallbackAPIView(APIView):
         )
         # 42 api에 정보 요청 실패
         if user_info_request.status_code != 200:
-            return redirect("https://127.0.0.1/")
+            return redirect(BASE_FULL_IP)
 
         user_info = user_info_request.json()
         coalition_info_request = requests.get(
@@ -197,7 +199,9 @@ class CallbackAPIView(APIView):
             user_instance.save()
         # login
         login(request, user_instance)
-        return redirect("https://127.0.0.1/")
+        user_instance.is_active = True
+        user_instance.save()
+        return redirect(BASE_FULL_IP)
 
     def _get_access_token(self, request) -> str:
         grant_type = "authorization_code"
@@ -220,8 +224,13 @@ class CallbackAPIView(APIView):
 
 
 def logout_view(request) -> redirect:
+    if request.user.is_authenticated:
+        user_instance = request.user
+        user_instance.is_active = False
+        user_instance.save()
+
     logout(request)
-    return redirect("https://127.0.0.1/")
+    return redirect(BASE_FULL_IP)
 
 
 class HouseViewSet(viewsets.ModelViewSet):
@@ -259,16 +268,16 @@ class TestAccountLogin(APIView):
         GET method override
         """
         if request.user.is_authenticated:
-            return redirect(
-                f"http://127.0.0.1:8000/api/v1/users/{request.user.intra_id}/"
-            )
+            return redirect(BASE_FULL_IP)
         try:
             user_instance = Users.objects.get(intra_id=kwargs["intra_id"])
             if user_instance.is_test_user:
+                user_instance.is_active = True
+                user_instance.save()
                 login(request, user_instance)
             else:
                 print("Error: 허용 되지 않은 유저입니다.")
-            return redirect("https://127.0.0.1/")
+            return redirect(BASE_FULL_IP)
         except Users.DoesNotExist:
             print("Error: 사용자를 찾을 수 없습니다.")
-            return redirect("https://127.0.0.1/")
+            return redirect(BASE_FULL_IP)
