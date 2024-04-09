@@ -206,3 +206,112 @@ class ChartViewSetTest(APITestCase):
         for idx, (key, value) in enumerate(response.data["house"].items()):
             self.assertEqual(key, house[idx])
             self.assertEqual(value, rate[idx])
+
+
+class LoginLogoutUserStatusTest(APITestCase):
+    def setUp(self):
+        """
+        test 유저 생성
+        """
+        self.user = get_user_model().objects.create_user(
+            intra_id="1", is_test_user=True
+        )
+        self.login_url = reverse(
+            "test_user_login", kwargs={"intra_id": self.user.intra_id}
+        )
+        self.logout_url = reverse("logout")
+
+    def test_login_logout_user_status(self):
+        """
+        login시 status가 online인지 확인
+        logout시 status가 offline인지 확인
+        """
+        # active 초기값 False 확인
+        self.assertEqual(self.user.is_active, False)
+
+        # login
+        response = self.client.get(self.login_url)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.is_active, True)
+
+        # logout
+        response = self.client.get(self.logout_url)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.is_active, False)
+
+    def test_double_login(self):
+        """
+        login double로 해도 올바른 상태값 반환하는지
+        """
+        # active 초기값 False 확인
+        self.assertEqual(self.user.is_active, False)
+
+        # login
+        response = self.client.get(self.login_url)
+
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.is_active, True)
+
+        # double login
+        response = self.client.get(self.login_url)
+
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.is_active, True)
+
+    def test_double_logout(self):
+        """
+        logout double로 해도 올바른 상태값 반환하는지
+        """
+        # active 초기값 False 확인
+        self.assertEqual(self.user.is_active, False)
+
+        # login
+        response = self.client.get(self.login_url)
+
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.is_active, True)
+
+        # logout
+        url = reverse("logout")
+        response = self.client.get(self.logout_url)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.is_active, False)
+
+        # double logout
+        response = self.client.get(self.logout_url)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.is_active, False)
+
+    def test_login_logout_login(self):
+        """
+        login_logout_login 할때
+        """
+        # active 초기값 False 확인
+        self.assertEqual(self.user.is_active, False)
+
+        # login
+        response = self.client.get(self.login_url)
+
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.is_active, True)
+
+        # logout
+        response = self.client.get(self.logout_url)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.is_active, False)
+
+        # login
+        response = self.client.get(self.login_url)
+
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.is_active, True)
