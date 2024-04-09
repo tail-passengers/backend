@@ -23,5 +23,5 @@ urlpatterns = [
         views.TestAccountLogin.as_view(),
         name="test_user_login",
     ),
-    path("house/", views.HouseViewSet.as_view({"get": "list"}), name="house"),
+    path("chart/", views.ChartViewSet.as_view({"get": "list"}), name="chart"),
 ]
