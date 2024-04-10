@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import json
 import uuid
 from typing import Deque
@@ -334,8 +335,12 @@ class TournamentGameConsumer(AsyncWebsocketConsumer):
                 "tournament_name"
             ]
             self.group_name_prefix = f"tournament_{self.tournament_name}"
-            self.group_name_a = self.group_name_prefix + "a"
-            self.group_name_b = self.group_name_prefix + "b"
+            self.group_name_a = hashlib.md5(
+                (self.group_name_prefix + "a").encode("utf-8")
+            ).hexdigest()
+            self.group_name_b = hashlib.md5(
+                (self.group_name_prefix + "b").encode("utf-8")
+            ).hexdigest()
             self.tournament = ACTIVE_TOURNAMENTS.get(self.tournament_name)
         if (
             self.tournament is not None
