@@ -13,6 +13,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 #https://stackoverflow.com/questions/59812009/what-is-the-use-of-pythonunbuffered-in-docker-file
 ENV PYTHONUNBUFFERED=1
 
+# daphne 서버를 사용하기 위해 설정
+ENV DJANGO_SETTINGS_MODULE=back.settings
+
 RUN apk update && apk upgrade && apk add dumb-init && rm -rf /var/cache/apk/*
 
 RUN python3.12 -m pip install --upgrade pip
