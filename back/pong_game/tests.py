@@ -1067,7 +1067,7 @@ class TournamentGameRoundConsumerTests(TestCase):
     expected_tournaments_data: list[dict[str, str]]
     TEST_TOURNAMENTS_INFO = [
         {
-            "tournament_name": "test_tournament1",
+            "tournament_name": "한글",
             "create_user_intra_id": "room_1_owner",
             "wait_num": "1",
         },
@@ -1080,7 +1080,7 @@ class TournamentGameRoundConsumerTests(TestCase):
 
     def __init__(self, methodName: str = ...):
         super().__init__(methodName)
-        self.room_1_name = "test_tournament1"
+        self.room_1_name = "한글"
         self.room_2_name = "test_tournament2"
         self.room_1_owner_id = "room_1_owner"
         self.room_1_user1_id = "room_1_user1"
@@ -1311,6 +1311,10 @@ class TournamentGameRoundConsumerTests(TestCase):
         for idx, (ready_info, user_info) in enumerate(
             zip(users_ready_info_test_tournament1, users_info_test_tournament1), start=0
         ):
+            # if idx == 0 or idx == 3:
+            #     round = 1
+            # else:
+            #     round = 2
             user = await self.get_user(intra_id=user_info["intra_id"])
             communicator = await self.connect_and_send_ready_data(
                 tournament_name=self.room_1_name,
