@@ -16,6 +16,6 @@ dj-rest-auth
 python-dotenv
 django-cors-headers
 drf-yasg
-daphne
+daphne==4.0.0
 channels
 channels-redis
