@@ -463,8 +463,13 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
             self.tournament = ACTIVE_TOURNAMENTS.get(self.tournament_name)
             self.round_number = int(self.scope["url_route"]["kwargs"]["round"])
             self.round = self.tournament.get_round(self.round_number)
-            self.game_group_name = self.tournament_name + "_" + str(self.round_number)
-            self.tournament_broadcast = self.tournament_name + "_broadcast"
+
+            self.game_group_name = hashlib.md5(
+                (self.tournament_name + "_" + str(self.round_number)).encode("utf-8")
+            ).hexdigest()
+            self.tournament_broadcast = hashlib.md5(
+                (self.tournament_name + "_broadcast").encode("utf-8")
+            ).hexdigest()
             # TODO if 문 간소화 by myko
             if (
                 self.tournament is not None
@@ -624,7 +629,9 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                 )
         else:
             round1, round2 = self.tournament.get_round(1), self.tournament.get_round(2)
-            self.winner_group = self.tournament_name + "_winner"
+            self.winner_group = hashlib.md5(
+                (self.tournament_name + "_winner").encode("utf-8")
+            ).hexdigest()
             await self.channel_layer.group_add(self.winner_group, self.channel_name)
             if (
                 round1.get_status() == PlayerStatus.END
