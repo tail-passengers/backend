@@ -190,10 +190,7 @@ class CallbackAPIView(APIView):
         image_address = user_info["image"]["versions"]["large"]
         house = HOUSE[coalition_info[0]["name"]]
         user_instance, created = Users.objects.get_or_create(
-            intra_id=login_id,
-            nickname=login_id,
-            status=0,
-            house=house,
+            intra_id=login_id, defaults={"nickname": login_id, "house": house}
         )
 
         if created:
