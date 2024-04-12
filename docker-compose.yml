@@ -4,7 +4,7 @@ services:
   db:
     image: postgres
     env_file:
-      - .env_sample
+      - .env
   web:
     build:
       context: ./
@@ -14,10 +14,10 @@ services:
     volumes:
       - ./back/:/app
     ports:
-      - "8000:8000"
-    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py loaddata test_user.json && daphne -b 0.0.0.0 -p 8000 back.asgi:application"
+      - "443:443"
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py loaddata test_user.json && daphne -b 0.0.0.0 -p 443 back.asgi:application"
     env_file:
-      - .env_sample
+      - .env
     depends_on:
       - db
   channels:
