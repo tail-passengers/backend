@@ -12,7 +12,6 @@ from .module.GeneralGame import GeneralGame
 from .module.GameSetValue import (
     MessageType,
     MAX_SCORE,
-    PlayerStatus,
     GameTimeType,
     ResultType,
     NOT_ALLOWED_TOURNAMENT_NAME,
@@ -555,19 +554,69 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
         ):
             self.round.set_round_ready(self.user.intra_id)
             if self.round.is_all_ready():
-                await self.channel_layer.group_send(
-                    self.game_group_name,
-                    {
-                        "type": "game.message",
-                        "message": self.round.build_start_json(),
-                    },
-                )
-                self.round.set_status(PlayerStatus.PLAYING)
-                self.tournament.set_status(TournamentStatus.PLAYING)
-                self.round.set_game_time(GameTimeType.START_TIME.value)
                 self.game_loop_task = asyncio.create_task(
                     self.send_game_messages_loop(self.round)
                 )
+
+                if self.tournament.is_all_round_ready():
+                    if self.round_number != int(RoundNumber.FINAL_NUMBER.value):
+                        await self.channel_layer.group_send(
+                            hashlib.md5(
+                                (self.tournament_name + "_" + "1").encode("utf-8")
+                            ).hexdigest(),
+                            {
+                                "type": "game.message",
+                                "message": json.dumps(
+                                    {
+                                        "message_type": MessageType.START.value,
+                                        "round": "1",
+                                    }
+                                ),
+                            },
+                        )
+                        await self.channel_layer.group_send(
+                            hashlib.md5(
+                                (self.tournament_name + "_" + "2").encode("utf-8")
+                            ).hexdigest(),
+                            {
+                                "type": "game.message",
+                                "message": json.dumps(
+                                    {
+                                        "message_type": MessageType.START.value,
+                                        "round": "2",
+                                    }
+                                ),
+                            },
+                        )
+                        self.tournament.set_round_status(
+                            status=GameStatus.PLAYING, is_final=False
+                        )
+                        self.tournament.set_round_game_time(
+                            time_type=GameTimeType.START_TIME, is_final=False
+                        )
+                        self.tournament.set_status(status=TournamentStatus.PLAYING)
+
+                    else:
+                        await self.channel_layer.group_send(
+                            hashlib.md5(
+                                (self.tournament_name + "_" + "3").encode("utf-8")
+                            ).hexdigest(),
+                            {
+                                "type": "game.message",
+                                "message": json.dumps(
+                                    {
+                                        "message_type": MessageType.START.value,
+                                        "round": "3",
+                                    }
+                                ),
+                            },
+                        )
+                        self.tournament.set_round_status(
+                            status=GameStatus.PLAYING, is_final=True
+                        )
+                        self.tournament.set_round_game_time(
+                            time_type=GameTimeType.START_TIME, is_final=True
+                        )
         elif (
             data["message_type"] == MessageType.PLAYING.value
             and self.round.get_status() == GameStatus.PLAYING
