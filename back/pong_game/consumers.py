@@ -19,6 +19,9 @@ from .module.GameSetValue import (
     TournamentStatus,
     TOURNAMENT_PLAYER_MAX_CNT,
     TournamentGroupName,
+    GameStatus,
+    RoundNumber,
+    MAX_TOURNAMENT_NAME_LENGTH,
 )
 from games.serializers import GeneralGameLogsSerializer, TournamentGameLogsSerializer
 from rest_framework.exceptions import ValidationError
@@ -114,7 +117,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
             self.game_id = str(self.scope["url_route"]["kwargs"]["game_id"])
             if (
                 self.game_id not in ACTIVE_GENERAL_GAMES.keys()
-                or ACTIVE_GENERAL_GAMES[self.game_id].get_status() != PlayerStatus.WAIT
+                or ACTIVE_GENERAL_GAMES[self.game_id].get_status() != GameStatus.WAIT
                 or ACTIVE_GENERAL_GAMES[self.game_id].get_player(self.user.intra_id)
                 is None
             ):
@@ -134,7 +137,8 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
             game = ACTIVE_GENERAL_GAMES.get(self.game_id)
             if game:
                 ACTIVE_GENERAL_GAMES.pop(self.game_id)
-                if game.get_status() != PlayerStatus.END:  # 게임 중간에 나갔을 경우
+                if game.get_status() != GameStatus.END:  # 게임 중간에 나갔을 경우
+                    game.set_status(GameStatus.ERROR)
                     data = game.build_error_json(self.user.intra_id)
                     await self.channel_layer.group_send(
                         self.game_group_name, {"type": "game.message", "message": data}
@@ -159,7 +163,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
         game = ACTIVE_GENERAL_GAMES[self.game_id]
         if (
             data["message_type"] == MessageType.READY.value
-            and game.get_status() == PlayerStatus.WAIT
+            and game.get_status() == GameStatus.WAIT
         ):
             game.set_ready(data["number"])
             if game.is_all_ready():
@@ -170,19 +174,19 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
                         "message": game.build_start_json(),
                     },
                 )
-                game.set_status(PlayerStatus.PLAYING)
+                game.set_status(GameStatus.PLAYING)
                 game.set_game_time(GameTimeType.START_TIME.value)
                 self.game_loop_task = asyncio.create_task(
                     self.send_game_messages_loop(game)
                 )
         elif (
             data["message_type"] == MessageType.PLAYING.value
-            and game.get_status() == PlayerStatus.PLAYING
+            and game.get_status() == GameStatus.PLAYING
         ):
             game.key_input(text_data)
         elif (
             data["message_type"] == MessageType.END.value
-            and game.get_status() == PlayerStatus.END
+            and game.get_status() == GameStatus.END
         ):
             try:
                 winner_id, loser_id = game.get_winner_loser_intra_id()
@@ -208,12 +212,12 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
     async def send_game_messages_loop(self, game: GeneralGame) -> None:
         while True:
             await asyncio.sleep(1 / 30)
-            if game.get_status() == PlayerStatus.PLAYING:
+            if game.get_status() == GameStatus.PLAYING:
                 await self.channel_layer.group_send(
                     self.game_group_name,
                     {"type": "game.message", "message": game.build_game_json()},
                 )
-            elif game.get_status() == PlayerStatus.SCORE:
+            elif game.get_status() == GameStatus.SCORE:
                 await self.channel_layer.group_send(
                     self.game_group_name,
                     {"type": "game.message", "message": game.build_score_json()},
@@ -224,10 +228,12 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
                         self.game_group_name,
                         {"type": "game.message", "message": game.build_end_json()},
                     )
-                    game.set_status(PlayerStatus.END)
+                    game.set_status(GameStatus.END)
                     game.set_game_time(GameTimeType.END_TIME.value)
                     break
-                game.set_status(PlayerStatus.PLAYING)
+                game.set_status(GameStatus.PLAYING)
+            if game.get_status() == GameStatus.ERROR:
+                break
 
     @database_sync_to_async
     def save_game_user_data_to_db(
@@ -562,24 +568,24 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                 )
         elif (
             data["message_type"] == MessageType.PLAYING.value
-            and self.round.get_status() == PlayerStatus.PLAYING
+            and self.round.get_status() == GameStatus.PLAYING
         ):
             self.round.key_input(text_data)
         elif (
             data["message_type"] == MessageType.STAY.value
-            and self.round.get_status() == PlayerStatus.END
+            and self.round.get_status() == GameStatus.END
         ):
             await self.next_match()
 
     async def send_game_messages_loop(self, game: Round) -> None:
         while True:
             await asyncio.sleep(1 / 30)
-            if game.get_status() == PlayerStatus.PLAYING:
+            if game.get_status() == GameStatus.PLAYING:
                 await self.channel_layer.group_send(
                     self.game_group_name,
                     {"type": "game.message", "message": game.build_game_json()},
                 )
-            elif game.get_status() == PlayerStatus.SCORE:
+            elif game.get_status() == GameStatus.SCORE:
                 await self.channel_layer.group_send(
                     self.game_group_name,
                     {"type": "game.message", "message": game.build_score_json()},
@@ -594,10 +600,12 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                             "stay_message": game.build_stay_json(),
                         },
                     )
-                    game.set_status(PlayerStatus.END)
+                    game.set_status(GameStatus.END)
                     game.set_game_time(GameTimeType.END_TIME.value)
                     break
-                game.set_status(PlayerStatus.PLAYING)
+                game.set_status(GameStatus.PLAYING)
+            if self.tournament.get_status() == TournamentStatus.ERROR:
+                break
 
     async def next_match(self) -> None:
         if self.round_number == 3:
@@ -634,8 +642,8 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
             ).hexdigest()
             await self.channel_layer.group_add(self.winner_group, self.channel_name)
             if (
-                round1.get_status() == PlayerStatus.END
-                and round2.get_status() == PlayerStatus.END
+                round1.get_status() == GameStatus.END
+                and round2.get_status() == GameStatus.END
             ):
                 await self.channel_layer.group_send(
                     self.winner_group,
