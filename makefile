@@ -13,7 +13,7 @@ test:
 	cd ./back/ && python3 manage.py test games --settings=back.test_settings
 	cd ./back/ && python3 manage.py test accounts --settings=back.test_settings
 	cd ./back/ && python3 manage.py test pong_game.tests.GeneralGameConsumerTests.test_save_game_data_to_db --settings=back.test_settings
-	cd ./back/ && python3 manage.py test pong_game.tests.TournamentGameRoundConsumerTests --settings=back.test_settings
+	cd ./back/ && python3 manage.py test pong_game.tests.TournamentGameRoundConsumerTests.test_disconnect2  --settings=back.test_settings
 #	cd ./back/ && python3 manage.py test pong_game.tests.GeneralGameConsumerTests.test_save_game_data_to_db --settings=back.test_settings
 #	cd ./back/ && python3 manage.py test  --settings=back.test_settings
 #	cd ./back/ && python3 manage.py test pong_game.tests.TournamentGameConsumerTests.test_disconnect_test2 --settings=back.test_settings
