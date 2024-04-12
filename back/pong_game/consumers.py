@@ -298,7 +298,9 @@ class TournamentGameWaitConsumer(AsyncWebsocketConsumer):
         tournament_name = data.get("tournament_name")
         if await self.is_exist_game_data_in_db(tournament_name=tournament_name):
             result = ResultType.FAIL.value
-        elif tournament_name is None:
+        elif not tournament_name:
+            result = ResultType.FAIL.value
+        elif len(tournament_name) > MAX_TOURNAMENT_NAME_LENGTH:
             result = ResultType.FAIL.value
         elif tournament_name == NOT_ALLOWED_TOURNAMENT_NAME:
             result = ResultType.FAIL.value
