@@ -1953,7 +1953,6 @@ class TournamentGameRoundConsumerTests(TestCase):
             while await communicator.receive_nothing() is False:
                 message = await communicator.receive_from()
                 message_dict = json.loads(message)
-                print(message_dict)
                 if message_dict["message_type"] == "error":
                     count += 1
                 if (
@@ -2195,7 +2194,6 @@ class TournamentGameRoundConsumerTests(TestCase):
             while await communicator.receive_nothing() is False:
                 message = await communicator.receive_from()
                 message_dict = json.loads(message)
-                print(message_dict)
                 if message_dict["message_type"] == "error":
                     count += 1
                 if (
