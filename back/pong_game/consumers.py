@@ -509,8 +509,8 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
             return
 
         # 게임이 비정상 종료 되었을 때
-        if self.round.get_status() != PlayerStatus.END:
-            self.tournament.set_status(TournamentStatus.END)
+        if self.round.get_status() != GameStatus.END:
+            self.tournament.set_status(TournamentStatus.ERROR)
             data = self.round.build_error_json(self.user.intra_id)
             await self.channel_layer.group_send(
                 self.tournament_broadcast,
@@ -547,11 +547,11 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
         if (
             message_type == MessageType.READY.value
             and self.tournament.get_status() == TournamentStatus.READY
-            and self.round_number < 3
+            and self.round_number < int(RoundNumber.FINAL_NUMBER.value)
         ) or (
             message_type == MessageType.READY.value
             and self.tournament.get_status() == TournamentStatus.PLAYING
-            and self.round_number == 3
+            and self.round_number == int(RoundNumber.FINAL_NUMBER.value)
         ):
             self.round.set_round_ready(self.user.intra_id)
             if self.round.is_all_ready():
