@@ -106,6 +106,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
         self.user: Users = None
+        self.db_complete: bool = False
         self.game_id: str | None = None
         self.game_group_name: str | None = None
         self.game_loop_task: asyncio.Task | None = None
@@ -186,19 +187,22 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
         elif (
             data["message_type"] == MessageType.END.value
             and game.get_status() == GameStatus.END
+            and self.db_complete is False
         ):
             try:
                 winner_id, loser_id = game.get_winner_loser_intra_id()
-                await self.save_game_user_data_to_db(
-                    game.get_db_data(), winner_id, loser_id
-                )
-                await self.send(
-                    json.dumps(
-                        {
-                            "message_type": MessageType.COMPLETE.value,
-                        }
+                if self.user.intra_id == winner_id:
+                    await self.save_game_user_data_to_db(
+                        game.get_db_data(), winner_id, loser_id
                     )
-                )
+                    self.db_complete = True
+                    await self.send(
+                        json.dumps(
+                            {
+                                "message_type": MessageType.COMPLETE.value,
+                            }
+                        )
+                    )
             except ValidationError:
                 await self.send(
                     json.dumps(
