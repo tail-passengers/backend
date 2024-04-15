@@ -337,6 +337,12 @@ class GeneralGameConsumerTests(TestCase):
             if user1_dict["message_type"] == "end":
                 break
 
+        while True:
+            user2_response = await communicator2.receive_from()
+            user2_dict = json.loads(user2_response)
+            if user2_dict["message_type"] == "end":
+                break
+
         # end 메세지를 consumer로 날림
         await communicator1.send_to(
             text_data=json.dumps(
@@ -345,9 +351,18 @@ class GeneralGameConsumerTests(TestCase):
                 }
             )
         )
-        user1_response = await communicator1.receive_from()
-        user1_dict = json.loads(user1_response)
-        self.assertEqual(user1_dict["message_type"], MessageType.COMPLETE.value)
+        await communicator2.send_to(
+            text_data=json.dumps(
+                {
+                    "message_type": "end",
+                }
+            )
+        )
+
+        # 승자만 db 관련 메시지를 받음
+        user2_response = await communicator2.receive_from()
+        user2_dict = json.loads(user2_response)
+        self.assertEqual(user2_dict["message_type"], MessageType.COMPLETE.value)
 
         # db 저장 될 때 까지 0.2초씩 기다림 timeout은 2초
         game_data_from_db = await self.wait_for_game_data(
