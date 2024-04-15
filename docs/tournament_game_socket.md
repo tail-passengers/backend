@@ -123,7 +123,9 @@
 ```json
 {
   "message_type": "start",
-  "round": "{1 / 2 / 3}"
+  "round": "{1 / 2 / 3}",
+  "1p": "{intra_id}",
+  "2p": "{intra_id}" 
 }
 ```
 
