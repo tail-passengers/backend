@@ -1,5 +1,6 @@
 import os
 import requests
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -66,6 +67,7 @@ class MeViewSet(viewsets.ModelViewSet):
     serializer_class: UsersDetailSerializer = UsersDetailSerializer
     http_method_names = ["get"]
 
+    @csrf_exempt
     def list(self, request, *args, **kwargs) -> Response:
         """
         GET method override
@@ -258,6 +260,7 @@ class ChartViewSet(viewsets.ModelViewSet):
                 else:
                     lose_logs[logs["player1"]["house"]] += 1
 
+    @csrf_exempt
     def list(self, request, *args, **kwargs) -> Response:
         """
         GET method override
