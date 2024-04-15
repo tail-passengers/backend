@@ -56,7 +56,7 @@ class LoginConsumer(AsyncWebsocketConsumer):
 
 
 class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
-    intra_id_list: list[str] = list()
+    nickname_list: list[str] = list()
     wait_list: Deque["GeneralGameWaitConsumer"] = deque()
 
     def __init__(self, *args, **kwargs):
@@ -76,9 +76,9 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
         if self.user.is_authenticated:
             if (
                 self in GeneralGameWaitConsumer.wait_list
-                and self.user.intra_id in GeneralGameWaitConsumer.intra_id_list
+                and self.user.nickname in GeneralGameWaitConsumer.nickname_list
             ):
-                GeneralGameWaitConsumer.intra_id_list.remove(self.user.intra_id)
+                GeneralGameWaitConsumer.nickname_list.remove(self.user.nickname)
                 GeneralGameWaitConsumer.wait_list.remove(self)
 
     @classmethod
@@ -88,18 +88,18 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
         player2 = GeneralGameWaitConsumer.wait_list.popleft()
         await player1.send(json.dumps({"game_id": game_id}))
         await player2.send(json.dumps({"game_id": game_id}))
-        GeneralGameWaitConsumer.intra_id_list.remove(player1.user.intra_id)
-        GeneralGameWaitConsumer.intra_id_list.remove(player2.user.intra_id)
+        GeneralGameWaitConsumer.nickname_list.remove(player1.user.nickname)
+        GeneralGameWaitConsumer.nickname_list.remove(player2.user.nickname)
         ACTIVE_GENERAL_GAMES[game_id] = GeneralGame(
             Player(1, player1.user.intra_id, player1.user.nickname),
             Player(2, player2.user.intra_id, player2.user.nickname),
         )
 
     async def add_wait_list(self) -> bool:
-        if self.user.intra_id in GeneralGameWaitConsumer.intra_id_list:
+        if self.user.nickname in GeneralGameWaitConsumer.nickname_list:
             return False
         GeneralGameWaitConsumer.wait_list.append(self)
-        GeneralGameWaitConsumer.intra_id_list.append(self.user.intra_id)
+        GeneralGameWaitConsumer.nickname_list.append(self.user.nickname)
         return True
 
 
@@ -314,7 +314,9 @@ class TournamentGameWaitConsumer(AsyncWebsocketConsumer):
             self.isProcessingComplete = True
             # TODO test 필요
             ACTIVE_TOURNAMENTS[tournament_name] = Tournament(
-                tournament_name=tournament_name, create_user_intra_id=self.user.intra_id
+                tournament_name=tournament_name,
+                create_user_intra_id=self.user.intra_id,
+                create_user_nickname=self.user.nickname,
             )
 
         await self.send(
@@ -360,7 +362,7 @@ class TournamentGameConsumer(AsyncWebsocketConsumer):
             await self.accept()
             player_number, wait_detail_json = (
                 self.tournament.build_tournament_wait_detail_json(
-                    intra_id=self.user.intra_id
+                    intra_id=self.user.intra_id, nickname=self.user.nickname
                 )
             )
             if int(player_number[-1]) <= TOURNAMENT_PLAYER_MAX_CNT // 2:
@@ -391,14 +393,14 @@ class TournamentGameConsumer(AsyncWebsocketConsumer):
             self.group_name_a,
             {
                 "type": "send.message",
-                "message": self.tournament.disconnect_tournament(self.user.intra_id),
+                "message": self.tournament.disconnect_tournament(self.user.nickname),
             },
         )
         await self.channel_layer.group_send(
             self.group_name_b,
             {
                 "type": "send.message",
-                "message": self.tournament.disconnect_tournament(self.user.intra_id),
+                "message": self.tournament.disconnect_tournament(self.user.nickname),
             },
         )
         if self.tournament.get_player_total_cnt() == 0:
@@ -408,12 +410,12 @@ class TournamentGameConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         if data.get("message_type") == MessageType.WAIT.value:
             number = data.get("number")
-            intra_id = data.get("intra_id")
-            if intra_id != self.user.intra_id:
+            nickname = data.get("nickname")
+            if nickname != self.user.nickname:
                 return
 
             if not self.tournament.try_set_ready(
-                player_number=number, intra_id=intra_id
+                player_number=number, nickname=nickname
             ):
                 return
 
@@ -462,7 +464,7 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
         end_message = event["end_message"]
 
         # Send message to WebSocket
-        if self.user.intra_id == self.round.get_winner():
+        if self.user.nickname == self.round.get_winner():
             await self.send(text_data=stay_message)
         else:
             await self.send(text_data=end_message)
@@ -514,7 +516,7 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
         # 게임이 비정상 종료 되었을 때
         if self.round.get_status() != GameStatus.END:
             self.tournament.set_status(TournamentStatus.ERROR)
-            data = self.round.build_error_json(self.user.intra_id)
+            data = self.round.build_error_json(self.user.nickname)
             await self.channel_layer.group_send(
                 self.tournament_broadcast,
                 {"type": "game.message", "message": data},
@@ -564,9 +566,9 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
 
                 if self.tournament.is_all_round_ready():
                     if self.round_number != int(RoundNumber.FINAL_NUMBER.value):
-                        player1_intra_id, player2_intra_id = self.tournament.get_round(
+                        player1_nickname, player2_nickname = self.tournament.get_round(
                             1
-                        ).get_intra_ids()
+                        ).get_nicknames()
                         await self.channel_layer.group_send(
                             hashlib.md5(
                                 (self.tournament_name + "_" + "1").encode("utf-8")
@@ -577,15 +579,15 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                                     {
                                         "message_type": MessageType.START.value,
                                         "round": "1",
-                                        "1p": player1_intra_id,
-                                        "2p": player2_intra_id,
+                                        "1p": player1_nickname,
+                                        "2p": player2_nickname,
                                     }
                                 ),
                             },
                         )
-                        player3_intra_id, player4_intra_id = self.tournament.get_round(
+                        player3_nickname, player4_nickname = self.tournament.get_round(
                             2
-                        ).get_intra_ids()
+                        ).get_nicknames()
                         await self.channel_layer.group_send(
                             hashlib.md5(
                                 (self.tournament_name + "_" + "2").encode("utf-8")
@@ -596,8 +598,8 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                                     {
                                         "message_type": MessageType.START.value,
                                         "round": "2",
-                                        "1p": player3_intra_id,
-                                        "2p": player4_intra_id,
+                                        "1p": player3_nickname,
+                                        "2p": player4_nickname,
                                     }
                                 ),
                             },
@@ -611,9 +613,9 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                         self.tournament.set_status(status=TournamentStatus.PLAYING)
 
                     else:
-                        player1_intra_id, player2_intra_id = self.tournament.get_round(
+                        player1_nickname, player2_nickname = self.tournament.get_round(
                             3
-                        ).get_intra_ids()
+                        ).get_nicknames()
                         await self.channel_layer.group_send(
                             hashlib.md5(
                                 (self.tournament_name + "_" + "3").encode("utf-8")
@@ -624,8 +626,8 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                                     {
                                         "message_type": MessageType.START.value,
                                         "round": "3",
-                                        "1p": player1_intra_id,
-                                        "2p": player2_intra_id,
+                                        "1p": player1_nickname,
+                                        "2p": player2_nickname,
                                     }
                                 ),
                             },

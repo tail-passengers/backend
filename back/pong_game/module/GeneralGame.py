@@ -77,7 +77,7 @@ class GeneralGame:
             {
                 "message_type": MessageType.READY.value,
                 "number": "player1" if number == 1 else "player2",
-                "intra_id": nickname,
+                "nickname": nickname,
             }
         )
 
@@ -133,7 +133,7 @@ class GeneralGame:
         return json.dumps(
             {
                 "message_type": MessageType.ERROR.value,
-                "intra_id": nickname,
+                "nickname": nickname,
             }
         )
 
@@ -207,13 +207,13 @@ class GeneralGame:
         else:
             return None, None
 
-    def set_player(self, player_intra_id: str) -> None:
+    def set_player(self, player_intra_id: str, player_nickname: str) -> None:
         if self.player1 is None:
-            self.player1 = Player(1, player_intra_id)
+            self.player1 = Player(1, player_intra_id, player_nickname)
             return
 
         if self.player2 is None:
-            self.player2 = Player(2, player_intra_id)
+            self.player2 = Player(2, player_intra_id, player_nickname)
             return
 
     def set_ready(self, number: str) -> None:
