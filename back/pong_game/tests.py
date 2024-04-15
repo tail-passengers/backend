@@ -118,8 +118,12 @@ class GeneralGameWaitConsumerTests(TestCase):
 
 class GeneralGameConsumerTests(TestCase):
     @database_sync_to_async
-    def create_test_user(self, intra_id):
+    def create_test_user(self, intra_id, nickname=None):
         # 테스트 사용자 생성
+        if nickname:
+            return get_user_model().objects.create_user(
+                intra_id=intra_id, nickname=nickname
+            )
         return get_user_model().objects.create_user(intra_id=intra_id)
 
     @database_sync_to_async
@@ -242,7 +246,9 @@ class GeneralGameConsumerTests(TestCase):
         """
         두 명 접속시 message_type 잘 보내는지 확인
         """
-        self.user1 = await self.create_test_user(intra_id="test3")
+        self.user1 = await self.create_test_user(
+            intra_id="test3", nickname="test3_nickname"
+        )
         self.user2 = await self.create_test_user(intra_id="test4")
 
         # 대기방 입장 및 게임 id 생성
@@ -276,7 +282,7 @@ class GeneralGameConsumerTests(TestCase):
         user1_response = await communicator1.receive_from()
         user1_response_dict = json.loads(user1_response)
         self.assertEqual(user1_response_dict["message_type"], "ready")
-        self.assertEqual(user1_response_dict["intra_id"], self.user1.intra_id)
+        self.assertEqual(user1_response_dict["intra_id"], self.user1.nickname)
         self.assertEqual(user1_response_dict["number"], "player1")
 
         communicator2 = WebsocketCommunicator(
@@ -292,7 +298,7 @@ class GeneralGameConsumerTests(TestCase):
         user2_response = await communicator2.receive_from()
         user2_response_dict = json.loads(user2_response)
         self.assertEqual(user2_response_dict["message_type"], "ready")
-        self.assertEqual(user2_response_dict["intra_id"], self.user2.intra_id)
+        self.assertEqual(user2_response_dict["intra_id"], self.user2.nickname)
         self.assertEqual(user2_response_dict["number"], "player2")
 
         # user1,2 응답
@@ -303,14 +309,14 @@ class GeneralGameConsumerTests(TestCase):
         user1_second_response = await communicator1.receive_from()
         user1_second_dict = json.loads(user1_second_response)
         self.assertEqual(user1_second_dict["message_type"], "start")
-        self.assertEqual(user1_second_dict["1p"], self.user1.intra_id)
-        self.assertEqual(user1_second_dict["2p"], self.user2.intra_id)
+        self.assertEqual(user1_second_dict["1p"], self.user1.nickname)
+        self.assertEqual(user1_second_dict["2p"], self.user2.nickname)
 
         user2_second_response = await communicator2.receive_from()
         user2_second_dict = json.loads(user2_second_response)
         self.assertEqual(user2_second_dict["message_type"], "start")
-        self.assertEqual(user2_second_dict["1p"], self.user1.intra_id)
-        self.assertEqual(user2_second_dict["2p"], self.user2.intra_id)
+        self.assertEqual(user2_second_dict["1p"], self.user1.nickname)
+        self.assertEqual(user2_second_dict["2p"], self.user2.nickname)
 
         # disconnect 안하면 밑에서 에러 발생
         await communicator1.disconnect()
