@@ -91,7 +91,8 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
         GeneralGameWaitConsumer.intra_id_list.remove(player1.user.intra_id)
         GeneralGameWaitConsumer.intra_id_list.remove(player2.user.intra_id)
         ACTIVE_GENERAL_GAMES[game_id] = GeneralGame(
-            Player(1, player1.user.intra_id), Player(2, player2.user.intra_id)
+            Player(1, player1.user.intra_id, player1.user.nickname),
+            Player(2, player2.user.intra_id, player2.user.nickname),
         )
 
     async def add_wait_list(self) -> bool:
