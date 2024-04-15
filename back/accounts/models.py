@@ -61,6 +61,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
         default=False
     )  # 추가: 관리자 사이트에 로그인하기 위해 필요
     is_active: bool = models.BooleanField(default=True)  # 추가: 사용자가 활성 상태인지
+    session_key = models.CharField(max_length=40, null=True, blank=True)
 
     objects: UserManager = UserManager()
 
