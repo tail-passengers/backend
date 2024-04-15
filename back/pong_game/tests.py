@@ -559,7 +559,7 @@ class TournamentGameWaitConsumerTests(TestCase):
         response = await communicator.receive_from()
         return json.loads(response)
 
-    async def test_receive_active_tournamnet_data(self):
+    async def test_receive_active_tournament_data(self):
         """
         현재 존재하는 토너먼트 방을 잘 받아오는지 테스트
         """
@@ -1344,18 +1344,26 @@ class TournamentGameRoundConsumerTests(TestCase):
         start_reponse_dict = json.loads(start_reponse)
         self.assertEqual(start_reponse_dict["message_type"], MessageType.START.value)
         self.assertEqual(start_reponse_dict["round"], "1")
+        self.assertEqual(start_reponse_dict["1p"], self.room_1_owner_id)
+        self.assertEqual(start_reponse_dict["2p"], self.room_1_user1_id)
         start_reponse = await self.test_tournament1_communicators[1].receive_from()
         start_reponse_dict = json.loads(start_reponse)
         self.assertEqual(start_reponse_dict["message_type"], MessageType.START.value)
         self.assertEqual(start_reponse_dict["round"], "1")
+        self.assertEqual(start_reponse_dict["1p"], self.room_1_owner_id)
+        self.assertEqual(start_reponse_dict["2p"], self.room_1_user1_id)
         start_reponse = await self.test_tournament1_communicators[2].receive_from()
         start_reponse_dict = json.loads(start_reponse)
         self.assertEqual(start_reponse_dict["message_type"], MessageType.START.value)
         self.assertEqual(start_reponse_dict["round"], "2")
+        self.assertEqual(start_reponse_dict["1p"], self.room_1_user2_id)
+        self.assertEqual(start_reponse_dict["2p"], self.room_1_user3_id)
         start_reponse = await self.test_tournament1_communicators[3].receive_from()
         start_reponse_dict = json.loads(start_reponse)
         self.assertEqual(start_reponse_dict["message_type"], MessageType.START.value)
         self.assertEqual(start_reponse_dict["round"], "2")
+        self.assertEqual(start_reponse_dict["1p"], self.room_1_user2_id)
+        self.assertEqual(start_reponse_dict["2p"], self.room_1_user3_id)
 
         await self.test_tournament1_communicators[0].send_to(
             text_data=json.dumps(
