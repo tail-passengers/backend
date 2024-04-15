@@ -75,6 +75,9 @@ class Round(GeneralGame):
     def get_winner(self) -> str:
         return self.winner
 
+    def get_intra_ids(self) -> tuple[str, str]:
+        return self.player1.get_intra_id(), self.player2.get_intra_id()
+
     def get_is_closed(self) -> bool:
         return self.is_closed
 
