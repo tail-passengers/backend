@@ -72,12 +72,12 @@ class GeneralGame:
             self.player2.paddle_handler(data["input"])
 
     @staticmethod
-    def build_ready_json(number: int, intra_id: str) -> json:
+    def build_ready_json(number: int, nickname: str) -> json:
         return json.dumps(
             {
                 "message_type": MessageType.READY.value,
                 "number": "player1" if number == 1 else "player2",
-                "intra_id": intra_id,
+                "intra_id": nickname,
             }
         )
 
@@ -85,8 +85,8 @@ class GeneralGame:
         return json.dumps(
             {
                 "message_type": MessageType.START.value,
-                "1p": self.player1.get_intra_id(),
-                "2p": self.player2.get_intra_id(),
+                "1p": self.player1.get_nickname(),
+                "2p": self.player2.get_nickname(),
             }
         )
 
@@ -128,12 +128,12 @@ class GeneralGame:
             }
         )
 
-    def build_error_json(self, intra_id: str) -> json:
+    def build_error_json(self, nickname: str) -> json:
         self.status = GameStatus.END
         return json.dumps(
             {
                 "message_type": MessageType.ERROR.value,
-                "intra_id": intra_id,
+                "intra_id": nickname,
             }
         )
 

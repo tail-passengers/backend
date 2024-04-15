@@ -128,7 +128,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
             self.game_group_name = f"game_{self.game_id}"
             await self.channel_layer.group_add(self.game_group_name, self.channel_name)
             await self.accept()
-            await self.send(GeneralGame.build_ready_json(number, player.intra_id))
+            await self.send(GeneralGame.build_ready_json(number, player.nickname))
         else:
             await self.close()
 
@@ -139,7 +139,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
                 ACTIVE_GENERAL_GAMES.pop(self.game_id)
                 if game.get_status() != GameStatus.END:  # 게임 중간에 나갔을 경우
                     game.set_status(GameStatus.ERROR)
-                    data = game.build_error_json(self.user.intra_id)
+                    data = game.build_error_json(self.user.nickname)
                     await self.channel_layer.group_send(
                         self.game_group_name, {"type": "game.message", "message": data}
                     )
