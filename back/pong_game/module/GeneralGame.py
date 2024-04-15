@@ -138,6 +138,17 @@ class GeneralGame:
             }
         )
 
+    def build_complete_json(self, is_error=False) -> json:
+        return json.dumps(
+            {
+                "message_type": (
+                    MessageType.ERROR.value if is_error else MessageType.COMPLETE.value
+                ),
+                "player1": self.player1.get_nickname(),
+                "player2": self.player2.get_nickname(),
+            }
+        )
+
     def _move_paddle(self) -> None:
         self.player1.get_paddle().move_handler(player_num=1)
         self.player2.get_paddle().move_handler(player_num=2)

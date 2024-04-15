@@ -32,6 +32,7 @@ class Tournament:
             None,
             None,
         ]
+        self.nickname_list: list[str] = ["", "", "", ""]
         self.player_total_cnt: int = 1
         self.status: TournamentStatus = TournamentStatus.WAIT
 
@@ -122,6 +123,19 @@ class Tournament:
                 }
             )
 
+    def build_tournament_complete_json(self, is_error=False) -> json:
+        return json.dumps(
+            {
+                "message_type": (
+                    MessageType.ERROR.value if is_error else MessageType.COMPLETE.value
+                ),
+                "player1": self.nickname_list[0],
+                "player2": self.nickname_list[1],
+                "player3": self.nickname_list[2],
+                "player4": self.nickname_list[3],
+            }
+        )
+
     def disconnect_tournament(self, nickname: str) -> json:
         data = {"message_type": MessageType.WAIT.value}
         for idx, player in enumerate(self.player_list):
@@ -139,7 +153,7 @@ class Tournament:
                 return False
             if player.get_status() != PlayerStatus.READY:
                 return False
-
+        self.nickname_list = [player.get_nickname() for player in self.player_list]
         return True
 
     def is_all_round_ready(self):

@@ -197,21 +197,9 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
                         game.get_db_data(), winner_id, loser_id
                     )
                     self.db_complete = True
-                    await self.send(
-                        json.dumps(
-                            {
-                                "message_type": MessageType.COMPLETE.value,
-                            }
-                        )
-                    )
+                    await self.send(game.build_complete_json())
             except ValidationError:
-                await self.send(
-                    json.dumps(
-                        {
-                            "message_type": MessageType.ERROR.value,
-                        }
-                    )
-                )
+                await self.send(game.build_complete_json(is_error=True))
 
     async def wait_ball(self, game: GeneralGame) -> None:
         cnt = 0
@@ -721,9 +709,7 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                     (
                         {
                             "type": "game.message",
-                            "message": json.dumps(
-                                {"message_type": MessageType.COMPLETE.value}
-                            ),
+                            "message": self.tournament.build_tournament_complete_json(),
                         }
                     ),
                 )
@@ -733,8 +719,8 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                     (
                         {
                             "type": "game.message",
-                            "message": json.dumps(
-                                {"message_type": MessageType.ERROR.value}
+                            "message": self.tournament.build_tournament_complete_json(
+                                is_error=True
                             ),
                         }
                     ),
