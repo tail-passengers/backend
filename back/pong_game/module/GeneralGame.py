@@ -90,9 +90,10 @@ class GeneralGame:
             }
         )
 
-    def build_game_json(self) -> json:
+    def build_game_json(self, game_start: bool = True) -> json:
         self._move_paddle()
-        self._move_ball()
+        if game_start:
+            self._move_ball()
         paddle1 = self.player1.get_paddle().get_position_x()
         paddle2 = self.player2.get_paddle().get_position_x()
         ball_x, ball_y, ball_z = self.ball.get_position()

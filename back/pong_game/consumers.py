@@ -213,7 +213,22 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
                     )
                 )
 
+    async def wait_ball(self, game: GeneralGame) -> None:
+        cnt = 0
+        while cnt < 60:
+            await asyncio.sleep(1 / 30)
+            await self.channel_layer.group_send(
+                self.game_group_name,
+                {
+                    "type": "game.message",
+                    "message": game.build_game_json(game_start=False),
+                },
+            )
+            cnt += 1
+
     async def send_game_messages_loop(self, game: GeneralGame) -> None:
+        await self.wait_ball(game)  # 시작 전 2초 동안 공 정지
+
         while True:
             await asyncio.sleep(1 / 30)
             if game.get_status() == GameStatus.PLAYING:
@@ -236,6 +251,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
                     game.set_game_time(GameTimeType.END_TIME.value)
                     break
                 game.set_status(GameStatus.PLAYING)
+                await self.wait_ball(game)  # 스코어 후 2초 동안 공 정지
             if game.get_status() == GameStatus.ERROR:
                 break
 
@@ -649,7 +665,22 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
         ):
             await self.next_match()
 
+    async def wait_ball(self, game: GeneralGame) -> None:
+        cnt = 0
+        while cnt < 60:
+            await asyncio.sleep(1 / 30)
+            await self.channel_layer.group_send(
+                self.game_group_name,
+                {
+                    "type": "game.message",
+                    "message": game.build_game_json(game_start=False),
+                },
+            )
+            cnt += 1
+
     async def send_game_messages_loop(self, game: Round) -> None:
+        await self.wait_ball(game)  # 시작 전 2초 동안 공 정지
+
         while True:
             await asyncio.sleep(1 / 30)
             if game.get_status() == GameStatus.PLAYING:
@@ -676,6 +707,7 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                     game.set_game_time(GameTimeType.END_TIME.value)
                     break
                 game.set_status(GameStatus.PLAYING)
+                await self.wait_ball(game)  # 스코어 후 2초 동안 공 정지
             if self.tournament.get_status() == TournamentStatus.ERROR:
                 break
 
