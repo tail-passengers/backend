@@ -273,20 +273,19 @@ class TournamentGameWaitConsumer(AsyncWebsocketConsumer):
             return True
         return False
 
+    @staticmethod
+    def _get_wait_list() -> list[dict[str, str]]:
+        wait_list = []
+        for t in ACTIVE_TOURNAMENTS.values():
+            if t.get_status() == TournamentStatus.WAIT and t.get_player_total_cnt() < 4:
+                wait_list.append(t.build_tournament_wait_dict())
+        return wait_list
+
     async def connect(self) -> None:
         self.user = self.scope["user"]
         if self.user.is_authenticated:
             await self.accept()
-            await self.send(
-                json.dumps(
-                    {
-                        "game_list": [
-                            t.build_tournament_wait_dict()
-                            for t in ACTIVE_TOURNAMENTS.values()
-                        ]
-                    }
-                )
-            )
+            await self.send(json.dumps({"game_list": self._get_wait_list()}))
         else:
             await self.close()
 
