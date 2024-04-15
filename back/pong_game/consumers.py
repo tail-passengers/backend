@@ -563,6 +563,9 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
 
                 if self.tournament.is_all_round_ready():
                     if self.round_number != int(RoundNumber.FINAL_NUMBER.value):
+                        player1_intra_id, player2_intra_id = self.tournament.get_round(
+                            1
+                        ).get_intra_ids()
                         await self.channel_layer.group_send(
                             hashlib.md5(
                                 (self.tournament_name + "_" + "1").encode("utf-8")
@@ -573,10 +576,15 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                                     {
                                         "message_type": MessageType.START.value,
                                         "round": "1",
+                                        "1p": player1_intra_id,
+                                        "2p": player2_intra_id,
                                     }
                                 ),
                             },
                         )
+                        player3_intra_id, player4_intra_id = self.tournament.get_round(
+                            2
+                        ).get_intra_ids()
                         await self.channel_layer.group_send(
                             hashlib.md5(
                                 (self.tournament_name + "_" + "2").encode("utf-8")
@@ -587,6 +595,8 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                                     {
                                         "message_type": MessageType.START.value,
                                         "round": "2",
+                                        "1p": player3_intra_id,
+                                        "2p": player4_intra_id,
                                     }
                                 ),
                             },
@@ -600,6 +610,9 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                         self.tournament.set_status(status=TournamentStatus.PLAYING)
 
                     else:
+                        player1_intra_id, player2_intra_id = self.tournament.get_round(
+                            3
+                        ).get_intra_ids()
                         await self.channel_layer.group_send(
                             hashlib.md5(
                                 (self.tournament_name + "_" + "3").encode("utf-8")
@@ -610,6 +623,8 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                                     {
                                         "message_type": MessageType.START.value,
                                         "round": "3",
+                                        "1p": player1_intra_id,
+                                        "2p": player2_intra_id,
                                     }
                                 ),
                             },
