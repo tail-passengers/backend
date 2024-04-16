@@ -144,10 +144,10 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
                     await self.channel_layer.group_send(
                         self.game_group_name, {"type": "game.message", "message": data}
                     )
-                self.game_loop_task.cancel()
                 try:  # cancel() 동작이 끝날 때까지 대기
+                    self.game_loop_task.cancel()
                     await self.game_loop_task
-                except asyncio.CancelledError:
+                except:
                     pass  # task가 이미 취소된 경우
             await self.channel_layer.group_discard(
                 self.game_group_name, self.channel_name
@@ -535,12 +535,11 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
                 and self.tournament_name in ACTIVE_TOURNAMENTS.keys()
             ):
                 ACTIVE_TOURNAMENTS.pop(self.tournament_name)
-            if self.game_loop_task is not None:
+            try:  # cancel() 동작이 끝날 때까지 대기
                 self.game_loop_task.cancel()
-                try:  # cancel() 동작이 끝날 때까지 대기
-                    await self.game_loop_task
-                except asyncio.CancelledError:
-                    pass  # task가 이미 취소된 경우
+                await self.game_loop_task
+            except:
+                pass  # task가 이미 취소된 경우
         await self.channel_layer.group_discard(
             self.tournament_broadcast, self.channel_name
         )
