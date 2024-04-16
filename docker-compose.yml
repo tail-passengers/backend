@@ -1,12 +1,26 @@
 version: '3'
 
 services:
+  db:
+    image: postgres
+    env_file:
+      - .env
   web:
     build:
       context: ./
       dockerfile: dockerfile
     image: web
     container_name : web
+    volumes:
+      - ./back/:/app
     ports:
-      - "8000:8000"
-      
+      - "443:443"
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py loaddata test_user.json && daphne -b 0.0.0.0 -p 443 back.asgi:application"
+    env_file:
+      - .env
+    depends_on:
+      - db
+  channels:
+    image: redis
+    ports:
+      - "6379:6379"
