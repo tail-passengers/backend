@@ -1,5 +1,5 @@
 from . import GameSetValue
-from .GameSetValue import FIELD_WIDTH, BALL_SPEED_X, BALL_RADIUS
+from .GameSetValue import FIELD_WIDTH, BALL_SPEED_X, BALL_RADIUS, PADDLE_CORRECTION
 
 
 class Ball:
@@ -13,6 +13,7 @@ class Ball:
         self.speed_x: float = BALL_SPEED_X
         # test 할때 속도를 받아오기 위해서 BALL_SPEED_Z를 GameSetValue.BALL_SPEED_Z로 수정
         self.speed_z: float = GameSetValue.BALL_SPEED_Z
+        self.paddle_correction = PADDLE_CORRECTION
 
     def reset_position(self) -> None:
         self.position_x = 0
@@ -20,6 +21,7 @@ class Ball:
         self.position_y = -((self.position_z - 1) * (self.position_z - 1) / 5000) + 435
         self.speed_x = BALL_SPEED_X
         self.speed_z = GameSetValue.BALL_SPEED_Z
+        self.paddle_correction = PADDLE_CORRECTION
 
     def update_ball_position(self) -> None:
         self.position_x += self.speed_x
@@ -38,7 +40,8 @@ class Ball:
         self.speed_z *= -1
 
     def protego_maxima(self) -> None:
-        self.speed_z += -4
+        self.speed_z += 4 if self.speed_z > 0 else -4
+        self.paddle_correction += 4
 
     def get_position(self) -> tuple:
         return self.position_x, self.position_y, self.position_z
