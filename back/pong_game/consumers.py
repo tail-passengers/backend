@@ -316,7 +316,6 @@ class TournamentGameWaitConsumer(AsyncWebsocketConsumer):
         else:
             result = ResultType.SUCCESS.value
             self.isProcessingComplete = True
-            # TODO test 필요
             ACTIVE_TOURNAMENTS[tournament_name] = Tournament(
                 tournament_name=tournament_name,
                 create_user_intra_id=self.user.intra_id,
@@ -344,7 +343,6 @@ class TournamentGameConsumer(AsyncWebsocketConsumer):
         # Send message to WebSocket
         await self.send(text_data=message)
 
-    # TODO accept 위치 테스트 터지면 보기
     async def connect(self) -> None:
         self.user = self.scope["user"]
         if self.user.is_authenticated:
@@ -487,7 +485,6 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
             self.tournament_broadcast = hashlib.md5(
                 (self.tournament_name + "_broadcast").encode("utf-8")
             ).hexdigest()
-            # TODO if 문 간소화 by myko
             if (
                 self.tournament is not None
                 and (
@@ -551,7 +548,6 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data: json = None, bytes_data=None) -> None:
         data = json.loads(text_data)
         message_type = data.get("message_type")
-        # TODO if문 간소화 하기
         if (
             message_type == MessageType.READY.value
             and self.tournament.get_status() == TournamentStatus.READY
