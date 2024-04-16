@@ -243,7 +243,11 @@
 
 ```json
 {
-  "message_type": "complete"
+  "message_type": "complete",
+  "winner": "{최종 승자의 nickname}",
+  "loser": "{준우승자의 nickname}",
+  "etc1": "{round 1 패배자의 nickname}",
+  "etc2": "{round 2 패배자의 nickname}"
 }
 ```
 
@@ -251,6 +255,10 @@
 
 ```json
 {
-  "message_type": "error"
+  "message_type": "error",
+  "player1": "{nickname}",
+  "player2": "{nickname}",
+  "player3": "{nickname}",
+  "player4": "{nickname}"
 }
 ```
