@@ -191,9 +191,12 @@ class CallbackAPIView(APIView):
             headers={"Authorization": f"Bearer {access_token}"},
         )
         coalition_info = coalition_info_request.json()
-        login_id = user_info["login"]
-        image_address = user_info["image"]["versions"]["large"]
-        house = HOUSE[coalition_info[0]["name"]]
+        try:
+            login_id = user_info["login"]
+            image_address = user_info["image"]["versions"]["large"]
+            house = HOUSE[coalition_info[0]["name"]]
+        except:
+            return redirect(BASE_FULL_IP)
         user_instance, created = Users.objects.get_or_create(
             intra_id=login_id, defaults={"nickname": login_id, "house": house}
         )
@@ -320,7 +323,7 @@ class ChartViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
-# TODO test 용도 삭제 해야함
+# test 유저용 login
 class TestAccountLogin(APIView):
 
     def get(self, request, *args, **kwargs) -> redirect or Response:
