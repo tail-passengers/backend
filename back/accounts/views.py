@@ -166,6 +166,14 @@ class Login42APIView(APIView):
 
 # https://soyoung-new-challenge.tistory.com/92
 class CallbackAPIView(APIView):
+    def _generate_unique_nickname(self, nickname) -> str:
+        original_nickname = nickname
+        count = 0
+        while Users.objects.filter(nickname=nickname).exists():
+            count += 1
+            nickname = f"{original_nickname}_{count}"
+        return nickname
+
     def get(self, request, *args, **kwargs) -> redirect:
         if request.user.is_authenticated:
             return redirect(BASE_FULL_IP)
@@ -197,8 +205,9 @@ class CallbackAPIView(APIView):
             house = HOUSE[coalition_info[0]["name"]]
         except:
             return redirect(BASE_FULL_IP)
+        nickname = self._generate_unique_nickname(login_id)
         user_instance, created = Users.objects.get_or_create(
-            intra_id=login_id, defaults={"nickname": login_id, "house": house}
+            intra_id=login_id, defaults={"nickname": nickname, "house": house}
         )
 
         if created:
