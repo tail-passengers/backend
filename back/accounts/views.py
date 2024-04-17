@@ -37,32 +37,6 @@ class UsersViewSet(viewsets.ModelViewSet):
     serializer_class: UsersSerializer = UsersSerializer
     http_method_names = ["get"]
 
-    # debug용 post
-    # http_method_names = ["get", "post"]
-    #
-    # def create(self, request, *args, **kwargs) -> Response:
-    #     """
-    #     디버그용 post
-    #     """
-    #     intra_id: str | None = request.data.get("intra_id")
-    #     if not intra_id:
-    #         return Response(
-    #             {"error": "intra_id is required"}, status=status.HTTP_400_BAD_REQUEST
-    #         )
-    #
-    #     # intra_id 중복 검사
-    #     if Users.objects.filter(intra_id=intra_id).exists():
-    #         return Response(
-    #             {"error": "User with this intra_id already exists"},
-    #             status=status.HTTP_400_BAD_REQUEST,
-    #         )
-    #
-    #     # 새로운 사용자 생성
-    #     user = Users.objects.create_user(intra_id=intra_id)
-    #     serializer = self.get_serializer(user)
-    #
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
-
 
 class MeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
