@@ -161,7 +161,9 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data: json = None, bytes_data=None) -> None:
         data = json.loads(text_data)
-        game = ACTIVE_GENERAL_GAMES[self.game_id]
+        game = ACTIVE_GENERAL_GAMES.get(self.game_id)
+        if not game:
+            return
         if (
             data["message_type"] == MessageType.READY.value
             and game.get_status() == GameStatus.WAIT
@@ -193,13 +195,25 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
             try:
                 winner_id, loser_id = game.get_winner_loser_intra_id()
                 if self.user.intra_id == winner_id:
+                    self.db_complete = True
                     await self.save_game_user_data_to_db(
                         game.get_db_data(), winner_id, loser_id
                     )
-                    self.db_complete = True
-                await self.send(game.build_complete_json())
+                    await self.channel_layer.group_send(
+                        self.game_group_name,
+                        {
+                            "type": "game.message",
+                            "message": game.build_complete_json(),
+                        },
+                    )
             except ValidationError:
-                await self.send(game.build_complete_json(is_error=True))
+                await self.channel_layer.group_send(
+                    self.game_group_name,
+                    {
+                        "type": "game.message",
+                        "message": game.build_complete_json(is_error=True),
+                    },
+                )
 
     async def wait_ball(self, game: GeneralGame) -> None:
         cnt = 0
