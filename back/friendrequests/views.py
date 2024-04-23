@@ -13,6 +13,10 @@ from accounts.views import UsersViewSet
 
 
 class FriendListViewSet(viewsets.ModelViewSet):
+    """
+    친구 목록 조회
+    """
+
     permission_classes = [IsAuthenticated]
     queryset = FriendRequests.objects.all()
     serializer_class: FriendListSerializer = FriendListSerializer
@@ -55,6 +59,10 @@ class FriendListViewSet(viewsets.ModelViewSet):
 
 
 class FriendRequestViewSet(viewsets.ModelViewSet):
+    """
+    친구 요청
+    """
+
     permission_classes = [IsAuthenticated]
     queryset = FriendRequests.objects.all()
     serializer_class: FriendRequestSerializer = FriendRequestSerializer
@@ -104,6 +112,10 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
 
 
 class FriendRequestDetailViewSet(viewsets.ModelViewSet):
+    """
+    친구 요청 수정, 삭제
+    """
+
     permission_classes = [IsAuthenticated]
     queryset = FriendRequests.objects.all()
     serializer_class: FriendRequestDetailSerializer = FriendRequestDetailSerializer

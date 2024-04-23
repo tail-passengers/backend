@@ -19,7 +19,16 @@ from .models import (
 )
 
 
-def is_exist_user(key: str, value: str or uuid) -> Users or None:
+def is_exist_user(key: str, value: Union[str, uuid.UUID]) -> Optional[Users]:
+    """
+    유저가 존재하는지 확인
+    Args:
+        key: intra_id 또는 user_id
+        value: intra_id 또는 user_id 값
+
+    Returns:
+        Users or None: 유저가 존재하면 유저 객체, 없으면 None
+    """
     try:
         user = None
         if key == "intra_id":
@@ -34,7 +43,12 @@ def is_exist_user(key: str, value: str or uuid) -> Users or None:
 
 def get_user_from_intra_id_or_user_id(ids: str or uuid) -> Users or None:
     """
-    intra_id 또는 user_id로 유저를 찾아 반환
+    intra_id 또는 user_id로 유저를 가져옴
+    Args:
+        ids: intra_id 또는 user_id 값
+
+    Returns:
+        Users or None: 유저가 존재하면 유저 객체, 없으면 None
     """
     user = is_exist_user("intra_id", ids)
     if user is None:
@@ -47,6 +61,12 @@ def get_user_from_intra_id_or_user_id(ids: str or uuid) -> Users or None:
 def create_with_intra_id_convert_to_user_id(self, request) -> Response:
     """
     intra_id를 user_id로 변환하여 Game Log를 생성
+    Args:
+        self: viewset 객체
+        request: 요청 정보가 담긴 객체
+
+    Returns:
+        Response: 생성된 Game Log 정보
     """
     player1_intra_id = request.data.get("player1_intra_id")
     player2_intra_id = request.data.get("player2_intra_id")
@@ -66,6 +86,10 @@ def create_with_intra_id_convert_to_user_id(self, request) -> Response:
 
 
 class GeneralGameLogsListViewSet(viewsets.ModelViewSet):
+    """
+    일반 게임 로그 리스트를 위한 ViewSet
+    """
+
     permission_classes = [IsAuthenticated]
     queryset = GeneralGameLogs.objects.all()
     serializer_class: GeneralGameLogsListSerializer = GeneralGameLogsListSerializer
@@ -89,6 +113,10 @@ class GeneralGameLogsListViewSet(viewsets.ModelViewSet):
 
 
 class GeneralGameLogsListMeViewSet(viewsets.ModelViewSet):
+    """
+    자신의 일반 게임 로그 리스트를 위한 ViewSet
+    """
+
     permission_classes = [IsAuthenticated]
     queryset = GeneralGameLogs.objects.all()
     serializer_class: GeneralGameLogsListSerializer = GeneralGameLogsListSerializer
@@ -104,6 +132,10 @@ class GeneralGameLogsListMeViewSet(viewsets.ModelViewSet):
 
 
 class TournamentGameLogsListViewSet(viewsets.ModelViewSet):
+    """
+    토너먼트 게임 로그 리스트를 위한 ViewSet
+    """
+
     permission_classes = [IsAuthenticated]
     queryset = TournamentGameLogs.objects.all()
     serializer_class: TournamentGameLogsListSerializer = (
@@ -134,6 +166,10 @@ class TournamentGameLogsListViewSet(viewsets.ModelViewSet):
 
 
 class TournamentGameLogsListMeViewSet(viewsets.ModelViewSet):
+    """
+    자신의 토너먼트 게임 로그 리스트를 위한 ViewSet
+    """
+
     permission_classes = [IsAuthenticated]
     queryset = TournamentGameLogs.objects.all()
     serializer_class: TournamentGameLogsListSerializer = (

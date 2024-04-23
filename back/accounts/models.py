@@ -1,12 +1,25 @@
 import uuid
 from datetime import datetime
+from typing import Optional, Union
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, intra_id, nickname=None, **extra_fields):
+    def create_user(
+        self, intra_id: str, nickname: Optional[str] = None, **extra_fields
+    ):
+        """
+        주어진 intra id와 nickname으로 새로운 유저를 생성하는 함수
+        Args:
+            intra_id: 유저의 intra ID
+            nickname: 유저의 닉네임(기본값은 intra_id)
+            **extra_fields: 추가 필드
+
+        Returns:
+            Users: 생성된 유저 객체
+        """
         if not intra_id:
             raise ValueError("The Intra ID must be set")
         user: Users = self.model(
@@ -18,7 +31,16 @@ class UserManager(BaseUserManager):
         user.set_unusable_password()
         return user
 
-    def create_superuser(self, intra_id, **extra_fields):
+    def create_superuser(self, intra_id: str, **extra_fields):
+        """
+        주어진 intra id로 superuser를 생성하는 함수
+        Args:
+            intra_id: 유저의 intra ID
+            **extra_fields: 추가 필드
+
+        Returns:
+            Users: 생성된 superuser 객체
+        """
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
 
@@ -31,11 +53,19 @@ class UserManager(BaseUserManager):
 
 
 class UserStatusEnum(models.TextChoices):
+    """
+    유저의 접속 상태를 나타내는 Enum 클래스
+    """
+
     ONLINE = "1", "Online"
     OFFLINE = "0", "Offline"
 
 
 class HouseEnum(models.TextChoices):
+    """
+    유저의 소속 집단을 나타내는 Enum 클래스
+    """
+
     GRYFFINDOR = "GR"
     RAVENCLAW = "RA"
     SLYTHERIN = "SL"
@@ -43,7 +73,11 @@ class HouseEnum(models.TextChoices):
 
 
 class Users(AbstractBaseUser, PermissionsMixin):
-    user_id: str or uuid = models.UUIDField(
+    """
+    유저 정보를 저장하는 모델 클래스
+    """
+
+    user_id: Union[str, uuid.UUID] = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
     intra_id: str = models.CharField(max_length=20, unique=True, editable=False)
