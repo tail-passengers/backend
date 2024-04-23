@@ -1,6 +1,6 @@
 import uuid
+from typing import Union, Optional
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import IntegrityError, DatabaseError
 from django.db.models import Q
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
@@ -8,9 +8,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from accounts.models import Users
 from .serializers import (
-    GeneralGameLogsSerializer,
     GeneralGameLogsListSerializer,
-    TournamentGameLogsSerializer,
     TournamentGameLogsListSerializer,
 )
 from .models import (
@@ -41,7 +39,7 @@ def is_exist_user(key: str, value: Union[str, uuid.UUID]) -> Optional[Users]:
         return None
 
 
-def get_user_from_intra_id_or_user_id(ids: str or uuid) -> Users or None:
+def get_user_from_intra_id_or_user_id(ids: Union[str, uuid.UUID]) -> Optional[Users]:
     """
     intra_id 또는 user_id로 유저를 가져옴
     Args:

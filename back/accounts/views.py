@@ -1,4 +1,5 @@
 import os
+from typing import Final
 import requests
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, status
@@ -20,14 +21,14 @@ from games.serializers import (
     TournamentGameLogsListSerializer,
 )
 
-HOUSE = {
+HOUSE: Final = {
     "Gam": HouseEnum.RAVENCLAW,
     "Gun": HouseEnum.HUFFLEPUFF,
     "Lee": HouseEnum.GRYFFINDOR,
     "Gon": HouseEnum.SLYTHERIN,
 }
 
-BASE_FULL_IP = f"https://{os.environ.get('BASE_IP')}/"
+BASE_FULL_IP: Final = f"https://{os.environ.get('BASE_IP')}/"
 
 
 # https://squirmm.tistory.com/entry/Django-DRF-Method-Override-%EB%B0%A9%EB%B2%95
