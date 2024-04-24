@@ -160,3 +160,10 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+# 기본 render 방식을 json 방식으로 변경
+REST_FRAMEWORK = {
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ]
+}

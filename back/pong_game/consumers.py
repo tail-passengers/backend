@@ -499,19 +499,20 @@ class TournamentGameConsumer(AsyncWebsocketConsumer):
         if self.tournament.get_status() == TournamentStatus.READY:
             return
 
+        data = self.tournament.disconnect_tournament(self.user.nickname)
         # 나간 인원과 줄어든 현재 인원을 전송
         await self.channel_layer.group_send(
             self.group_name_a,
             {
                 "type": "send.message",
-                "message": self.tournament.disconnect_tournament(self.user.nickname),
+                "message": data,
             },
         )
         await self.channel_layer.group_send(
             self.group_name_b,
             {
                 "type": "send.message",
-                "message": self.tournament.disconnect_tournament(self.user.nickname),
+                "message": data,
             },
         )
         if self.tournament.get_player_total_cnt() == 0:

@@ -730,8 +730,8 @@ class TournamentGameConsumerTests(TestCase):
         },
     ]
 
-    def __init__(self, methodName: str = ...):
-        super().__init__(methodName)
+    def __init__(self, method_name: str = ...):
+        super().__init__(method_name)
         self.room_1_name = "test_tournament1"
         self.room_2_name = "test_tournament2"
         self.room_1_owner_id = "room_1_owner"
@@ -1136,8 +1136,8 @@ class TournamentGameRoundConsumerTests(TestCase):
         },
     ]
 
-    def __init__(self, methodName: str = ...):
-        super().__init__(methodName)
+    def __init__(self, method_name: str = ...):
+        super().__init__(method_name)
         self.room_1_name = "한글"
         self.room_2_name = "test_tournament2"
         self.room_1_owner_id = "room_1_owner"
