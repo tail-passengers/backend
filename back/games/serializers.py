@@ -1,3 +1,4 @@
+from typing import Union
 from django.utils import timezone
 from rest_framework import serializers
 from .models import (
@@ -8,9 +9,19 @@ from accounts.serializers import UsersSerializer
 from accounts.models import Users
 
 
-def create_game_log(
-    validated_data: dict, is_general: bool = True
-) -> GeneralGameLogs or TournamentGameLogs:
+GAME_LOG = Union[GeneralGameLogs, TournamentGameLogs]
+
+
+def create_game_log(validated_data: dict, is_general: bool = True) -> GAME_LOG:
+    """
+    게임 로그를 생성하는 함수
+    Args:
+        validated_data: 유효성 검사를 통과한 데이터
+        is_general: 일반 게임 로그인지 토너먼트 게임 로그인지 여부
+
+    Returns:
+        GeneralGameLogs or TournamentGameLogs: 생성된 게임 로그
+    """
     validated_data["player1"] = Users.objects.get(
         intra_id=validated_data["player1"]["intra_id"]
     )
@@ -26,6 +37,10 @@ def create_game_log(
 
 
 class GeneralGameLogsSerializer(serializers.ModelSerializer):
+    """
+    일반 게임 로그를 위한 Serializer
+    """
+
     player1_intra_id: str = serializers.CharField(source="player1.intra_id")
     player2_intra_id: str = serializers.CharField(source="player2.intra_id")
 
@@ -63,6 +78,10 @@ class GeneralGameLogsSerializer(serializers.ModelSerializer):
 
 
 class GeneralGameLogsListSerializer(serializers.ModelSerializer):
+    """
+    일반 게임 로그 리스트를 위한 Serializer
+    """
+
     player1: Users = UsersSerializer()
     player2: Users = UsersSerializer()
 
@@ -83,6 +102,10 @@ class GeneralGameLogsListSerializer(serializers.ModelSerializer):
 
 
 class TournamentGameLogsSerializer(serializers.ModelSerializer):
+    """
+    토너먼트 게임 로그를 위한 Serializer
+    """
+
     player1_intra_id: str = serializers.CharField(source="player1.intra_id")
     player2_intra_id: str = serializers.CharField(source="player2.intra_id")
 
@@ -121,11 +144,15 @@ class TournamentGameLogsSerializer(serializers.ModelSerializer):
 
 
 class TournamentGameLogsListSerializer(serializers.ModelSerializer):
+    """
+    토너먼트 게임 로그 리스트를 위한 Serializer
+    """
+
     player1: Users = UsersSerializer()
     player2: Users = UsersSerializer()
 
     class Meta:
-        model: TournamentGameLogsSerializer = TournamentGameLogs
+        model: TournamentGameLogs = TournamentGameLogs
         fields = (
             "tournament_name",
             "round",

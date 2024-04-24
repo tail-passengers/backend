@@ -1,4 +1,5 @@
 import os
+from typing import Final
 import requests
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, status
@@ -20,18 +21,22 @@ from games.serializers import (
     TournamentGameLogsListSerializer,
 )
 
-HOUSE = {
+HOUSE: Final = {
     "Gam": HouseEnum.RAVENCLAW,
     "Gun": HouseEnum.HUFFLEPUFF,
     "Lee": HouseEnum.GRYFFINDOR,
     "Gon": HouseEnum.SLYTHERIN,
 }
 
-BASE_FULL_IP = f"https://{os.environ.get('BASE_IP')}/"
+BASE_FULL_IP: Final = f"https://{os.environ.get('BASE_IP')}/"
 
 
 # https://squirmm.tistory.com/entry/Django-DRF-Method-Override-%EB%B0%A9%EB%B2%95
 class UsersViewSet(viewsets.ModelViewSet):
+    """
+    유저 정보 조회
+    """
+
     permission_classes = [IsAuthenticated]
     queryset = Users.objects.all()
     serializer_class: UsersSerializer = UsersSerializer
@@ -39,6 +44,10 @@ class UsersViewSet(viewsets.ModelViewSet):
 
 
 class MeViewSet(viewsets.ModelViewSet):
+    """
+    현재 로그인한 사용자 정보 조회
+    """
+
     permission_classes = [IsAuthenticated]
     queryset = Users.objects.all()
     serializer_class: UsersDetailSerializer = UsersDetailSerializer
@@ -55,6 +64,10 @@ class MeViewSet(viewsets.ModelViewSet):
 
 
 class UsersDetailViewSet(viewsets.ModelViewSet):
+    """
+    유저의 상세 정보 조회 및 수정
+    """
+
     permission_classes = [IsAuthenticated]
     queryset = Users.objects.all()
     serializer_class: UsersDetailSerializer = UsersDetailSerializer
@@ -124,6 +137,10 @@ class UsersDetailViewSet(viewsets.ModelViewSet):
 
 
 class Login42APIView(APIView):
+    """
+    42 oauth 로그인
+    """
+
     def get(self, request, *args, **kwargs) -> redirect:
         if request.user.is_authenticated:
             return redirect(BASE_FULL_IP)
@@ -140,6 +157,10 @@ class Login42APIView(APIView):
 
 # https://soyoung-new-challenge.tistory.com/92
 class CallbackAPIView(APIView):
+    """
+    42 oauth 콜백
+    """
+
     def _generate_unique_nickname(self, nickname) -> str:
         original_nickname = nickname
         count = 0
@@ -217,6 +238,14 @@ class CallbackAPIView(APIView):
 
 
 def logout_view(request) -> redirect:
+    """
+    로그아웃
+    Args:
+        request: 받은 request
+
+    Returns:
+        BASE_FULL_IP로 redirect
+    """
     if request.user.is_authenticated:
         user_instance = request.user
         user_instance.status = UserStatusEnum.OFFLINE
@@ -227,6 +256,10 @@ def logout_view(request) -> redirect:
 
 
 class ChartViewSet(viewsets.ModelViewSet):
+    """
+    사용자와 기숙사의 승률 조회
+    """
+
     permission_classes = [IsAuthenticated]
     queryset = Users.objects.all()
     serializer_class: UsersSerializer = UsersSerializer
@@ -236,6 +269,17 @@ class ChartViewSet(viewsets.ModelViewSet):
     def _add_data(
         request: requests, data: dict, win_logs: dict, lose_logs: dict
     ) -> None:
+        """
+        사용자의 승패 횟수를 추가하는 함수
+        Args:
+            request: 사용자 정보가 있는 request
+            data: 사용자의 게임 로그
+            win_logs: 기숙사의 승리 횟수
+            lose_logs: 기숙사의 패배 횟수
+
+        Returns:
+            None
+        """
         for logs in data:
             if logs["player1"]["intra_id"] == request.user.intra_id:
                 if logs["player1_score"] > logs["player2_score"]:
@@ -252,6 +296,9 @@ class ChartViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs) -> Response:
         """
         GET method override
+
+        Returns:
+            사용자와 각 기숙사별 승률과 기숙사 전체 승률
         """
         data = {}
 
@@ -306,8 +353,10 @@ class ChartViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
-# test 유저용 login
 class TestAccountLogin(APIView):
+    """
+    테스트 유저용 로그인
+    """
 
     def get(self, request, *args, **kwargs) -> redirect or Response:
         """

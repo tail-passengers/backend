@@ -4,6 +4,10 @@ from .models import FriendRequests
 
 
 class FriendListSerializer(serializers.ModelSerializer):
+    """
+    친구 목록 조회 시 사용되는 Serializer
+    """
+
     request_user_id: UsersSerializer = UsersSerializer(read_only=True)
     response_user_id: UsersSerializer = UsersSerializer(read_only=True)
     request_intra_id: str = serializers.CharField(source="request_user_id.intra_id")
@@ -22,6 +26,10 @@ class FriendListSerializer(serializers.ModelSerializer):
 
 
 class FriendRequestSerializer(serializers.ModelSerializer):
+    """
+    친구 요청 시 사용되는 Serializer
+    """
+
     class Meta:
         model: FriendRequests = FriendRequests
         fields: tuple[str] = (
@@ -32,8 +40,10 @@ class FriendRequestSerializer(serializers.ModelSerializer):
 
 
 class FriendRequestDetailSerializer(serializers.ModelSerializer):
+    """
+    친구 요청 수정 및 삭제 시 사용되는 Serializer
+    """
+
     class Meta:
         model: FriendRequests = FriendRequests
-        fields: tuple[str] = (
-            "status",
-        )
+        fields: tuple[str] = ("status",)

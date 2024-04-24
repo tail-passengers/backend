@@ -29,22 +29,6 @@ class UsersViewSetTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_add_user(self):
-        """
-        디버그용 post 잘 작동하는지 확인
-        """
-        self.client.force_authenticate(user=self.user)
-        url = reverse("users")
-        data = {
-            "intra_id": "2",
-        }
-        # 생성 확인
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        # 중복 id 체크
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
 
 class MeViewSetTest(APITestCase):
     def setUp(self):

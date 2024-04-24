@@ -1,8 +1,9 @@
 from django.urls import path
+from django.urls.conf import partial
 from . import views
 from .views import logout_view
 
-urlpatterns = [
+urlpatterns: list[partial] = [
     path("me/", views.MeViewSet.as_view({"get": "list"}), name="me"),
     path(
         "users/",
