@@ -375,8 +375,8 @@ class GeneralGameConsumerTests(TestCase):
         user2_response = await communicator2.receive_from()
         user2_dict = json.loads(user2_response)
         self.assertEqual(user2_dict["message_type"], MessageType.COMPLETE.value)
-        self.assertEqual(user2_dict["player1"], "test1_nickname")
-        self.assertEqual(user2_dict["player2"], "test2_nickname")
+        self.assertEqual(user2_dict["loser"], "test1_nickname")
+        self.assertEqual(user2_dict["winner"], "test2_nickname")
 
         # db 저장 될 때 까지 0.2초씩 기다림 timeout은 2초
         game_data_from_db = await self.wait_for_game_data(
@@ -390,7 +390,7 @@ class GeneralGameConsumerTests(TestCase):
         self.assertEqual(game_data_from_db.player1_id, self.user1.user_id)
         self.assertEqual(game_data_from_db.player2_id, self.user2.user_id)
         self.assertEqual(game_data_from_db.player1_score, 0)
-        self.assertEqual(game_data_from_db.player2_score, 5)
+        self.assertEqual(game_data_from_db.player2_score, 3)
 
         # 유저 데이터 확인
         test1 = await self.get_user(intra_id="test1")
@@ -1036,7 +1036,7 @@ class TournamentGameConsumerTests(TestCase):
         self.assertEqual(tournament.tournament_name, self.room_1_name)
         self.assertEqual(tournament.player_list[0], None)
         self.assertEqual(tournament.player_list[1].get_intra_id(), self.room_1_user1_id)
-        self.assertEqual(tournament.player_total_cnt, 1)
+        self.assertEqual(tournament.get_player_total_cnt(), 1)
 
         # 다시 연결 및 입장
         communicator, response_dict = await self.connect_and_echo_data(
@@ -1052,7 +1052,7 @@ class TournamentGameConsumerTests(TestCase):
         self.assertEqual(tournament.tournament_name, self.room_1_name)
         self.assertEqual(tournament.player_list[0].get_intra_id(), self.room_1_owner_id)
         self.assertEqual(tournament.player_list[1].get_intra_id(), self.room_1_user1_id)
-        self.assertEqual(tournament.player_total_cnt, 2)
+        self.assertEqual(tournament.get_player_total_cnt(), 2)
 
         # room1에 세번째 유저 참가
         communicator, response_dict = await self.connect_and_echo_data(
@@ -1073,7 +1073,7 @@ class TournamentGameConsumerTests(TestCase):
         self.assertEqual(tournament.player_list[0].get_intra_id(), self.room_1_owner_id)
         self.assertEqual(tournament.player_list[1].get_intra_id(), self.room_1_user1_id)
         self.assertEqual(tournament.player_list[2].get_intra_id(), self.room_1_user2_id)
-        self.assertEqual(tournament.player_total_cnt, 3)
+        self.assertEqual(tournament.get_player_total_cnt(), 3)
 
     async def test_overflow_user_connection_test(self):
         """
