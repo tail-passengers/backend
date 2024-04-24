@@ -1,3 +1,4 @@
+from django.urls.conf import partial
 from django.urls import path, include, re_path
 from django.conf import settings
 from django.views.static import serve
@@ -18,7 +19,7 @@ schema_view_v1 = get_schema_view(
     ],
 )
 
-urlpatterns = [
+urlpatterns: list[partial] = [
     path("api/v1/", include("games.urls")),
     path("api/v1/", include("accounts.urls")),
     path("api/v1/", include("friendrequests.urls")),

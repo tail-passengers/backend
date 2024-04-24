@@ -3,6 +3,10 @@ from .models import Users
 
 
 class UsersSerializer(serializers.ModelSerializer):
+    """
+    필요한 유저 정보만 직렬화하는 클래스
+    """
+
     class Meta:
         model: Users = Users
         fields: tuple = (
@@ -18,6 +22,10 @@ class UsersSerializer(serializers.ModelSerializer):
 
 
 class UsersDetailSerializer(serializers.ModelSerializer):
+    """
+    모든 유저 정보를 직렬화 하는 클래스
+    """
+
     class Meta:
         model: Users = Users
         fields: tuple = (

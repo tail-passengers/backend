@@ -1,4 +1,5 @@
 import uuid
+from typing import Union
 from datetime import datetime
 
 from django.db import models
@@ -6,7 +7,11 @@ from accounts.models import Users
 
 
 class GeneralGameLogs(models.Model):
-    game_id: str or uuid = models.UUIDField(
+    """
+    일반(멀티) 게임 로그
+    """
+
+    game_id: Union[str, uuid.UUID] = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
     start_time: datetime = models.DateTimeField()
@@ -32,6 +37,10 @@ class GeneralGameLogs(models.Model):
 
 
 class TournamentGameLogs(models.Model):
+    """
+    토너먼트 게임 로그
+    """
+
     tournament_name: str = models.CharField(max_length=20)
     round: int = models.IntegerField()
     player1: Users = models.ForeignKey(

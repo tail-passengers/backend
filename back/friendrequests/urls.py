@@ -1,7 +1,8 @@
 from django.urls import path
+from django.urls.conf import partial
 from . import views
 
-urlpatterns = [
+urlpatterns: list[partial] = [
     path(
         "friend_requests/<str:intra_id>/<str:status>/",
         views.FriendListViewSet.as_view({"get": "list"}),

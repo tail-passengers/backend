@@ -1,4 +1,5 @@
 import uuid
+from typing import Union
 from datetime import datetime
 
 from django.db import models
@@ -6,6 +7,10 @@ from accounts.models import Users
 
 
 class RequestStatusEnum(models.TextChoices):
+    """
+    친구 요청 상태를 나타내는 Enum
+    """
+
     ACCEPTED = "1", "Accept"
     PENDING = "0", "Pending"
 
@@ -19,7 +24,11 @@ Foreign Key options
 
 
 class FriendRequests(models.Model):
-    request_id: str or uuid = models.UUIDField(
+    """
+    친구 요청 정보를 저장하는 모델
+    """
+
+    request_id: Union[str, uuid.UUID] = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False
     )
     request_user_id: Users = models.ForeignKey(
