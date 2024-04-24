@@ -87,3 +87,21 @@ class Paddle:
             -PADDLE_BOUNDARY,
             min(PADDLE_BOUNDARY, new_paddle_x),
         )
+
+    @property
+    def position_x(self) -> float:
+        """
+        position_x를 반환하는 함수
+        Returns:
+            float: position_x
+        """
+        return self.__position_x
+
+    @property
+    def position_z(self) -> float:
+        """
+        position_z를 반환하는 함수
+        Returns:
+            float: position_z
+        """
+        return self.__position_z

@@ -75,8 +75,76 @@ class Ball:
         self.__speed_z += 4 if self.__speed_z > 0 else -4
         self.__paddle_correction += 4
 
-    def get_position(self) -> tuple:
-        return self.position_x, self.position_y, self.position_z
+    @property
+    def position_x(self) -> float:
+        """
+        공의 x 좌표를 반환하는 함수
+        Returns:
+            float: 공의 x 좌표
+        """
+        return self.__position_x
 
-    def get_speed(self) -> tuple:
-        return self.speed_x, self.speed_z
+    @property
+    def position_z(self) -> float:
+        """
+        공의 z 좌표를 반환하는 함수
+        Returns:
+            float: 공의 z 좌표
+        """
+        return self.__position_z
+
+    @property
+    def radius(self) -> float:
+        """
+        공의 반지름을 반환하는 함수
+        Returns:
+            float: 공의 반지름
+        """
+        return self.__radius
+
+    @property
+    def paddle_correction(self) -> float:
+        """
+        패들의 보정값을 반환하는 함수
+        Returns:
+            float: 패들의 보정값
+        """
+        return self.__paddle_correction
+
+    @property
+    def speed_x(self) -> float:
+        """
+        공의 x 속도를 반환하는 함수
+        Returns:
+            float: 공의 x 속도
+        """
+        return self.__speed_x
+
+    @property
+    def speed_z(self) -> float:
+        """
+        공의 z 속도를 반환하는 함수
+        Returns:
+            float: 공의 z 속도
+        """
+        return self.__speed_z
+
+    @speed_x.setter
+    def speed_x(self, value):
+        self.__speed_x = value
+
+    def get_position(self) -> tuple[float, float, float]:
+        """
+        공의 위치를 반환하는 함수
+        Returns:
+            tuple: 공의 x, y, z 좌표
+        """
+        return self.__position_x, self.__position_y, self.__position_z
+
+    def get_speed(self) -> tuple[float, float]:
+        """
+        공의 속도를 반환하는 함수
+        Returns:
+            tuple: 공의 x, z 속도
+        """
+        return self.__speed_x, self.__speed_z

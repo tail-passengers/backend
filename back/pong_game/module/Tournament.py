@@ -252,6 +252,14 @@ class Tournament:
     def get_winner_loser_intra_ids(self, round_number: int) -> tuple:
         return self.__round_list[round_number - 1].get_winner_loser_intra_id()
 
+    @property
+    def tournament_name(self) -> str:
+        return self.__tournament_name
+
+    @property
+    def player_list(self) -> list[Optional[Player]]:
+        return self.__player_list
+
     def set_status(self, status: TournamentStatus) -> None:
         self.__status = status
 
