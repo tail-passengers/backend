@@ -1,5 +1,5 @@
 import json
-
+from typing import Optional
 from .GameSetValue import (
     TournamentStatus,
     MessageType,

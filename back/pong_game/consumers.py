@@ -2,7 +2,7 @@ import asyncio
 import hashlib
 import json
 import uuid
-from typing import Deque
+from typing import Deque, Optional
 from django.db.models import F
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
@@ -69,7 +69,7 @@ class GeneralGameWaitConsumer(AsyncWebsocketConsumer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
-        self.user: Users or None = None
+        self.user: Optional[Users] = None
 
     async def connect(self) -> None:
         self.user = self.scope["user"]
@@ -129,9 +129,9 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
         super().__init__(args, kwargs)
         self.user: Users = None
         self.db_complete: bool = False
-        self.game_id: str | None = None
-        self.game_group_name: str | None = None
-        self.game_loop_task: asyncio.Task | None = None
+        self.game_id: Optional[str] = None
+        self.game_group_name: Optional[str] = None
+        self.game_loop_task: Optional[asyncio.Task] = None
 
     async def connect(self) -> None:
         self.user = self.scope["user"]
@@ -351,7 +351,7 @@ class TournamentGameWaitConsumer(AsyncWebsocketConsumer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
-        self.user: Users or None = None
+        self.user: Optional[Users] = None
         self.isProcessingComplete: bool = False
 
     @database_sync_to_async
@@ -435,12 +435,12 @@ class TournamentGameConsumer(AsyncWebsocketConsumer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
-        self.user: Users or None = None
+        self.user: Optional[Users] = None
         self.tournament_name: str = ""
         self.group_name_prefix: str = ""
         self.group_name_a: str = ""
         self.group_name_b: str = ""
-        self.tournament: Tournament or None = None
+        self.tournament: Optional[Tournament] = None
 
     async def send_message(self, event) -> None:
         message = event["message"]
@@ -558,15 +558,15 @@ class TournamentGameRoundConsumer(AsyncWebsocketConsumer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
-        self.user: Users or None = None
+        self.user: Optional[Users] = None
         self.tournament_name: str = ""  # 토너먼트 이름
-        self.tournament: Tournament or None = None  # 현재 토너먼트 객체
+        self.tournament: Optional[Tournament] = None  # 현재 토너먼트 객체
         self.round_number: int = 0  # 현재 라운드
-        self.round: Round or None = None  # 현재 라운드 객체
+        self.round: Optional[Round] = None  # 현재 라운드 객체
         self.game_group_name: str = ""  # 현재 게임 그룹 채널 이름
         self.tournament_broadcast: str = ""  # 현재 토너먼트 전체 채널 이름
         self.winner_group: str = ""  # 1,2라운드 승자 채널 이름
-        self.game_loop_task: asyncio.Task | None = None  # 게임 루프
+        self.game_loop_task: Optional[asyncio.Task] = None  # 게임 루프
 
     async def game_message(self, event) -> None:
         message = event["message"]
