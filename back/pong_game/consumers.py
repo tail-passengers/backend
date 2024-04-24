@@ -129,7 +129,7 @@ class GeneralGameConsumer(AsyncWebsocketConsumer):
             self.game_group_name = f"game_{self.game_id}"
             await self.channel_layer.group_add(self.game_group_name, self.channel_name)
             await self.accept()
-            await self.send(GeneralGame.build_ready_json(number, player.nickname))
+            await self.send(GeneralGame.build_ready_json(number, player.get_nickname()))
         else:
             await self.close()
 

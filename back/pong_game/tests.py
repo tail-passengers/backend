@@ -1114,7 +1114,7 @@ class TournamentGameConsumerTests(TestCase):
         communicator.scope["user"] = user
         connected, _ = await communicator.connect()
         tournament = ACTIVE_TOURNAMENTS.get(self.room_1_name)
-        self.assertEqual(tournament.status, TournamentStatus.READY)
+        self.assertEqual(tournament.get_status(), TournamentStatus.READY)
         # 거부 하는지 확인
         self.assertFalse(connected)
 

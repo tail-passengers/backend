@@ -4,33 +4,33 @@ from .GameSetValue import PlayerStatus
 
 class Player:
     def __init__(self, number: int, intra_id: str, nickname: str = None):
-        self.number: int = number
-        self.intra_id: str = intra_id
-        self.nickname: str = nickname if nickname else intra_id
-        self.status: PlayerStatus = PlayerStatus.WAIT
-        self.paddle: Paddle = Paddle(number)
+        self.__number: int = number
+        self.__intra_id: str = intra_id
+        self.__nickname: str = nickname if nickname else intra_id
+        self.__status: PlayerStatus = PlayerStatus.WAIT
+        self.__paddle: Paddle = Paddle(number)
 
     def get_number(self) -> int:
-        return self.number
+        return self.__number
 
     def get_intra_id(self) -> str:
-        return self.intra_id
+        return self.__intra_id
 
     def get_nickname(self) -> str:
-        return self.nickname
+        return self.__nickname
 
     def get_status(self) -> PlayerStatus:
-        return self.status
+        return self.__status
 
     def get_paddle(self) -> Paddle:
-        return self.paddle
+        return self.__paddle
 
     def set_status(self, status: PlayerStatus) -> None:
-        self.status = status
+        self.__status = status
 
     def set_number(self, number: int) -> None:
-        self.number = number
-        self.paddle.reset_position(number)
+        self.__number = number
+        self.__paddle.reset_position(number)
 
     def paddle_handler(self, key_input: str) -> None:
-        self.paddle.input_handler(key_input)
+        self.__paddle.input_handler(key_input)
