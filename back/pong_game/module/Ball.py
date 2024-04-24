@@ -3,14 +3,16 @@ from .GameSetValue import FIELD_WIDTH, BALL_SPEED_X, BALL_RADIUS, PADDLE_CORRECT
 
 
 class Ball:
+    """
+    Ball class
+    """
+
     def __init__(self):
         self.__position_x: float = 0
         self.__position_z: float = 0
         self.__position_y: float = (
             -((self.__position_z - 1) * (self.__position_z - 1) / 5000) + 435
         )
-        self.radius: float = BALL_RADIUS
-        self.speed_x: float = BALL_SPEED_X
         self.__radius: float = BALL_RADIUS
         self.__speed_x: float = BALL_SPEED_X
         # test 할때 속도를 받아오기 위해서 BALL_SPEED_Z를 GameSetValue.BALL_SPEED_Z로 수정
@@ -18,12 +20,9 @@ class Ball:
         self.__paddle_correction = PADDLE_CORRECTION
 
     def reset_position(self) -> None:
-        self.position_x = 0
-        self.position_z = 0
-        self.position_y = -((self.position_z - 1) * (self.position_z - 1) / 5000) + 435
-        self.speed_x = BALL_SPEED_X
-        self.speed_z = GameSetValue.BALL_SPEED_Z
-        self.paddle_correction = PADDLE_CORRECTION
+        """
+        득점하거나 게임이 끝난 후 공의 위치를 초기화하는 함수
+        """
         self.__position_x = 0
         self.__position_z = 0
         self.__position_y = (
@@ -34,9 +33,9 @@ class Ball:
         self.__paddle_correction = PADDLE_CORRECTION
 
     def update_ball_position(self) -> None:
-        self.position_x += self.speed_x
-        self.position_z += self.speed_z
-        self.position_y = -((self.position_z - 1) * (self.position_z - 1) / 5000) + 435
+        """
+        공의 속도에 따라 공의 위치를 업데이트하는 함수
+        """
         self.__position_x += self.__speed_x
         self.__position_z += self.__speed_z
         self.__position_y = (
@@ -44,6 +43,11 @@ class Ball:
         )
 
     def is_side_collision(self) -> bool:
+        """
+        공이 좌우 벽에 부딪혔는지 확인하는 함수
+        Returns:
+            bool: 공이 좌우 벽에 부딪혔으면 True, 아니면 False
+        """
         half_field_width = (FIELD_WIDTH - 2) / 2
         return (
             self.__position_x - self.__radius < -half_field_width
@@ -51,14 +55,23 @@ class Ball:
         )
 
     def hit_ball_back(self, paddle_x: float) -> None:
-        self.speed_x = (self.position_x - paddle_x) / 5
-        self.speed_z *= -1
+        """
+        공이 패들에 부딪혔을 때의 처리를 하는 함수
+        Args:
+            paddle_x: paddle의 x 좌표
+
+        Returns:
+            None
+        """
         self.__speed_x = (self.__position_x - paddle_x) / 5
         self.__speed_z *= -1
 
     def protego_maxima(self) -> None:
-        self.speed_z += 4 if self.speed_z > 0 else -4
-        self.paddle_correction += 4
+        """
+        protego_maxima spell을 사용했을 때의 처리를 하는 함수
+        Returns:
+            None
+        """
         self.__speed_z += 4 if self.__speed_z > 0 else -4
         self.__paddle_correction += 4
 

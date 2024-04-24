@@ -16,6 +16,10 @@ from .Round import Round
 
 
 class Tournament:
+    """
+    토너먼트 클래스
+    """
+
     def __init__(
         self,
         tournament_name: str,
@@ -37,6 +41,11 @@ class Tournament:
         self.__status: TournamentStatus = TournamentStatus.WAIT
 
     def build_tournament_wait_dict(self) -> dict:
+        """
+        대기 중인 토너먼트 정보를 딕셔너리 형태로 반환하는 함수
+        Returns:
+            dict: 대기 중인 토너먼트 정보
+        """
         return {
             "tournament_name": self.__tournament_name,
             "wait_num": str(self.__player_total_cnt),
@@ -45,7 +54,15 @@ class Tournament:
     def _join_tournament_with_intra_id(
         self, intra_id: str, nickname: str
     ) -> PlayerNumber:
-        for idx, player in enumerate(self.player_list):
+        """
+        토너먼트에 참가하는 함수
+        Args:
+            intra_id: 참가자의 intra_id
+            nickname: 참가자의 닉네임
+
+        Returns:
+            PlayerNumber: 참가자의 번호
+        """
         for idx, player in enumerate(self.__player_list):
             if player is None:
                 self.__player_list[idx] = Player(
@@ -61,6 +78,16 @@ class Tournament:
     def build_tournament_wait_detail_json(
         self, intra_id: str, nickname: str
     ) -> tuple[str, json]:
+        """
+        대기 중인 토너먼트 정보를 json 형태로 반환하는 함수
+        Args:
+            intra_id: 참가자의 intra_id
+            nickname: 참가자의 닉네임
+
+        Returns:
+            str: 참가자의 번호
+            json: 대기 중인 토너먼트 정보
+        """
         player_number = self._join_tournament_with_intra_id(
             intra_id=intra_id, nickname=nickname
         ).value
@@ -79,6 +106,16 @@ class Tournament:
         player1_nickname: str = None,
         player2_nickname: str = None,
     ) -> json:
+        """
+        토너먼트 시작을 알리는 json을 반환하는 함수
+        Args:
+            team_name: 현재 라운드의 팀 이름
+            player1_nickname: 플레이어1의 닉네임
+            player2_nickname: 플레이어2의 닉네임
+
+        Returns:
+            json: 토너먼트 시작을 알리는 json
+        """
         if team_name == TournamentGroupName.A_TEAM:
             self.__round_list[0] = Round(
                 self.__player_list[0], self.__player_list[1], RoundNumber.ROUND_1
@@ -125,6 +162,14 @@ class Tournament:
             )
 
     def build_tournament_complete_json(self, is_error=False) -> json:
+        """
+        토너먼트 종료를 알리는 json을 반환하는 함수
+        Args:
+            is_error: 에러가 발생했는지 여부
+
+        Returns:
+            json: 토너먼트 종료를 알리는 json
+        """
         return json.dumps(
             {
                 "message_type": (
@@ -138,6 +183,14 @@ class Tournament:
         )
 
     def disconnect_tournament(self, nickname: str) -> json:
+        """
+        토너먼트 참가자가 나갔을 때의 처리를 하는 함수
+        Args:
+            nickname: 나간 참가자의 닉네임
+
+        Returns:
+            json: 나간 참가자의 정보
+        """
         data = {"message_type": MessageType.WAIT.value}
         for idx, player in enumerate(self.__player_list):
             if player is not None and player.get_nickname() == nickname:
@@ -149,7 +202,11 @@ class Tournament:
         return json.dumps(data)
 
     def is_all_ready(self) -> bool:
-        for player in self.player_list:
+        """
+        모든 참가자가 레디 상태인지 확인하는 함수
+        Returns:
+            bool: 모든 참가자가 레디 상태이면 True, 아니면 False
+        """
         for player in self.__player_list:
             if player is None:
                 return False
@@ -159,7 +216,11 @@ class Tournament:
         return True
 
     def is_all_round_ready(self):
-        if self.round_list[0].is_all_ready() and self.round_list[1].is_all_ready():
+        """
+        모든 라운드가 레디 상태인지 확인하는 함수
+        Returns:
+            bool: 모든 라운드가 레디 상태이면 True, 아니면 False
+        """
         if self.__round_list[0].is_all_ready() and self.__round_list[1].is_all_ready():
             return True
         return False
@@ -174,8 +235,14 @@ class Tournament:
         return self.__round_list[round_number - 1]
 
     def get_db_datas(self, round_number: int) -> dict:
-        db_data = self.round_list[round_number - 1].get_db_data()
-        db_data["tournament_name"] = self.tournament_name
+        """
+        라운드에 대한 db 데이터를 반환하는 함수
+        Args:
+            round_number: round number
+
+        Returns:
+            dict: 라운드에 대한 db 데이터
+        """
         db_data = self.__round_list[round_number - 1].get_db_data()
         db_data["tournament_name"] = self.__tournament_name
         db_data["round"] = round_number
@@ -183,13 +250,21 @@ class Tournament:
         return db_data
 
     def get_winner_loser_intra_ids(self, round_number: int) -> tuple:
-        return self.round_list[round_number - 1].get_winner_loser_intra_id()
         return self.__round_list[round_number - 1].get_winner_loser_intra_id()
 
     def set_status(self, status: TournamentStatus) -> None:
         self.__status = status
 
     def try_set_ready(self, player_number: str, nickname: str) -> bool:
+        """
+        플레이어의 레디 상태를 설정하는 함수
+        Args:
+            player_number: 플레이어의 번호
+            nickname: 플레이어의 닉네임
+
+        Returns:
+            bool: 레디 상태가 설정되면 True, 아니면 False
+        """
         player_numbers = [player.value for player in PlayerNumber]
         idx = player_numbers.index(player_number)
         if (

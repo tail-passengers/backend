@@ -3,6 +3,10 @@ from .GameSetValue import PlayerStatus
 
 
 class Player:
+    """
+    플레이어 클래스
+    """
+
     def __init__(self, number: int, intra_id: str, nickname: str = None):
         self.__number: int = number
         self.__intra_id: str = intra_id

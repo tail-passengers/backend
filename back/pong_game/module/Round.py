@@ -6,6 +6,10 @@ from .Player import Player
 
 
 class Round(GeneralGame):
+    """
+    라운드 클래스
+    """
+
     def __init__(self, player1: Player, player2: Player, round_number: RoundNumber):
         super().__init__(player1, player2)
         self.__round_number: RoundNumber = round_number
@@ -14,6 +18,11 @@ class Round(GeneralGame):
         self.__is_closed: bool = False
 
     def build_start_json(self) -> json:
+        """
+        라운드 시작 메시지를 json 형태로 반환하는 함수
+        Returns:
+            json: 라운드 시작 메시지
+        """
         return json.dumps(
             {
                 "message_type": MessageType.START.value,
@@ -22,10 +31,11 @@ class Round(GeneralGame):
         )
 
     def build_end_json(self) -> json:
-        self.winner = (
-            self.player1.get_nickname()
-            if self.score1 > self.score2
-            else self.player2.get_nickname()
+        """
+        라운드 종료 메시지를 json 형태로 반환하는 함수
+        Returns:
+            json: 라운드 종료 메시지
+        """
         self.__winner = (
             self._player1.get_nickname()
             if self._score1 > self._score2
@@ -46,10 +56,11 @@ class Round(GeneralGame):
         )
 
     def build_stay_json(self) -> json:
-        self.winner = (
-            self.player1.get_nickname()
-            if self.score1 > self.score2
-            else self.player2.get_nickname()
+        """
+        라운드 종료 메시지를 json 형태로 반환하는 함수
+        Returns:
+            json: 라운드 종료 메시지
+        """
         self.__winner = (
             self._player1.get_nickname()
             if self._score1 > self._score2
@@ -70,7 +81,11 @@ class Round(GeneralGame):
         )
 
     def is_all_ready(self) -> bool:
-        if self.player1 is None or self.player2 is None:
+        """
+        두 플레이어가 모두 라운드 준비가 되었는지 확인하는 함수
+        Returns:
+            bool: 두 플레이어가 모두 라운드 준비가 되었으면 True, 아니면 False
+        """
         if self._player1 is None or self._player2 is None:
             return False
         if (
