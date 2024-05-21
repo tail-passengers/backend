@@ -227,14 +227,12 @@ class CallbackAPIView(APIView):
         client_id = os.environ.get("CLIENT_ID")
         client_secret = os.environ.get("CLIENT_SECRET")
         code = request.GET.get("code")
-        state = request.GET.get("state")
         redirect_uri = os.environ.get("REDIRECT_URI")
         data = {
             "grant_type": grant_type,
             "client_id": client_id,
             "client_secret": client_secret,
             "code": code,
-            "state": state,
             "redirect_uri": redirect_uri,
         }
         token_request = requests.post("https://api.intra.42.fr/oauth/token", data)
