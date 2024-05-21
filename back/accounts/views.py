@@ -1,4 +1,6 @@
 import os
+import random
+import string
 from typing import Final
 import requests
 from django.views.decorators.csrf import csrf_exempt
@@ -148,7 +150,9 @@ class Login42APIView(APIView):
         client_id = os.environ.get("CLIENT_ID")
         response_type = "code"
         redirect_uri = os.environ.get("REDIRECT_URI")
-        state = os.environ.get("STATE")
+        #state를 랜덤으로 생성
+        state = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+        request.session['state'] = state  # 생성된 state 값을 세션에 저장
         oauth_42_api_url = "https://api.intra.42.fr/oauth/authorize"
         return redirect(
             f"{oauth_42_api_url}?client_id={client_id}&redirect_uri={redirect_uri}&response_type={response_type}&state={state}"
@@ -173,10 +177,11 @@ class CallbackAPIView(APIView):
         if request.user.is_authenticated:
             return redirect(BASE_FULL_IP)
 
-        if request.session.get("state") and not request.GET.get(
-            "state"
-        ) == os.environ.get("STATE"):
-            raise ValidationError({"detail": "oauth중 state 검증 실패."})
+        stored_state = request.session.get("state")
+        received_state = request.GET.get("state")
+
+        if stored_state is None or stored_state != received_state:
+            raise ValidationError({"detail": "OAuth state 검증 실패."})
 
         access_token = self._get_access_token(request)
         # 42 api에 정보 요청
